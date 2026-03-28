@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title>Whiplash Loop Mark</title>
+  <desc>Original high-pressure conductor style emblem for the whiplash-loop skill.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#121212"/>
+      <stop offset="100%" stop-color="#2f0f08"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#f2c14e"/>
+      <stop offset="100%" stop-color="#ff6b35"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="104" fill="url(#bg)"/>
+  <circle cx="256" cy="186" r="70" fill="#f4efe8"/>
+  <path d="M192 158c14-36 52-58 94-52 18 2 34 9 47 20-6-34-36-60-77-65-38-5-72 10-91 38-8 12-13 26-14 41 11-8 25-14 41-18z" fill="#1a1a1a"/>
+  <path d="M221 197c12 9 22 13 35 13s24-4 35-13" stroke="#1a1a1a" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <path d="M155 378c16-74 65-118 101-118s85 44 101 118" fill="#f4efe8"/>
+  <path d="M218 268l-35 122h-32l25-123z" fill="#1a1a1a"/>
+  <path d="M294 268l35 122h32l-25-123z" fill="#1a1a1a"/>
+  <path d="M248 252l22 15-53 78-18-10z" fill="url(#accent)"/>
+  <path d="M286 246l125-103" stroke="url(#accent)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M333 295l92-69" stroke="#f4efe8" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+  <path d="M115 414c62-9 141-3 202 11 43 10 80 10 95-6" stroke="url(#accent)" stroke-width="18" stroke-linecap="round" fill="none"/>
+</svg>
