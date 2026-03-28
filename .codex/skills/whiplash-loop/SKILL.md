@@ -110,13 +110,15 @@ Map the review to this contract:
 
 Read [references/whiplash-reviewer-profile.md](references/whiplash-reviewer-profile.md) for the reviewer role and [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) for the stricter contract when needed.
 
-## Machine Verdict Block
+## Internal Machine Verdict
 
-After the human-readable review sections, include one final JSON object that mirrors the reviewer contract.
+Keep the machine-readable verdict available for loop control, but do not surface raw JSON or JSONL in normal user-visible chat unless the parent agent explicitly asks for it.
 
-- The JSON should match [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) exactly.
+- Prefer matching [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) exactly when the parent agent or wrapper explicitly needs machine-parsable loop control.
 - Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `issues`, `evidence`, `worker_orders`, and `proof_required`.
-- If the environment cannot enforce JSON strictly, still emit the JSON block so the next round can parse it mechanically.
+- In normal chat mode, keep the user-visible response human-readable and do not dump the machine object into the conversation.
+- Never emit JSONL to the user-visible chat stream for this skill.
+- If strict machine parsing is unavailable, preserve the contract in compact structured notes or internal carry-forward state rather than exposing raw machine output to the user.
 
 ## Tone Rules
 

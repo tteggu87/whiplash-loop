@@ -55,7 +55,7 @@ Return:
 - proof required for the next pass
 - residual risk
 - loop control with continue or stop
-- a final machine-readable JSON verdict block
+- machine-readable verdict data only when the parent agent explicitly asks for it for loop control
 
 Structured verdict contract:
 - Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `issues`, `evidence`, `worker_orders`, and `proof_required`.
@@ -74,10 +74,10 @@ Output shape:
    - Proof required
    - Residual risk
    - Loop control
-2. Final JSON object:
-   - one object only
-   - no prose after the JSON block
-   - make the JSON consistent with the human-readable review above
+2. Optional machine-readable object:
+   - include it only when the parent agent explicitly asks for machine-parsable loop control
+   - never dump JSONL into normal user-visible chat
+   - if included, make it consistent with the human-readable review above
 
 Orders forwarding format:
 - In fail rounds, make the `Orders to worker` section directly forwardable by the parent agent.
