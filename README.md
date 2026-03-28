@@ -1,6 +1,6 @@
 # Whiplash Loop
 
-![Whiplash Loop Logo](./logo.svg)
+![Whiplash Loop Logo](./logo.png)
 
 `whiplash-loop` is a Codex skill for high-pressure worker and reviewer loops triggered by `위플래쉬` or `플레처소환`.
 
@@ -23,4 +23,4 @@
 
 ## Note On The Logo
 
-This repository now uses a pixel-art SVG reinterpretation based on the supplied reference image, tuned for repo and skill branding.
+This repository now uses the supplied reference image directly as the logo asset.
