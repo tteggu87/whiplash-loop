@@ -23,4 +23,4 @@
 
 ## Note On The Logo
 
-This repository uses an original conductor-style SVG mark. It does not use copyrighted film stills or actor photography.
+This repository now uses a pixel-art SVG reinterpretation based on the supplied reference image, tuned for repo and skill branding.
