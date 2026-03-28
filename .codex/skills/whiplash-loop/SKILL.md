@@ -44,6 +44,17 @@ Track at least:
 
 Before each new worker pass, restate the loop state in a compact block so the next pass knows exactly what is still open.
 
+## Retry Strategy Rotation
+
+When the worker fails multiple rounds, rotate strategy. Do not retry the same approach twice.
+
+- Round 2 (1st retry): Direct fix — address the exact defect reported. Minimal change, targeted repair.
+- Round 3 (2nd retry): Structural change — try a different approach, alternative pattern, or type guard instead of the same direct fix that already failed.
+- Round 4 (3rd retry): Reset approach — revert the failed change entirely and re-implement from scratch with a different design.
+- Round 5: Last chance. If still failing after three different strategies, the defect is not converging.
+
+The reviewer must note which strategy the worker should use in `worker_orders`.
+
 ## Next Worker Pass
 
 When the reviewer fails a round:
@@ -51,8 +62,9 @@ When the reviewer fails a round:
 1. Carry forward the unresolved findings.
 2. Copy the reviewer `worker_orders` into the next worker pass.
 3. Copy the reviewer `proof_required` into the next worker pass.
-4. Make the worker address those items before adding any optional polish.
-5. Keep the next worker pass focused on defect closure and proof.
+4. Select the retry strategy for the current round (see Retry Strategy Rotation).
+5. Make the worker address those items before adding any optional polish.
+6. Keep the next worker pass focused on defect closure and proof.
 
 ## Fail Round Visibility
 
@@ -115,7 +127,7 @@ Read [references/whiplash-reviewer-profile.md](references/whiplash-reviewer-prof
 Keep the machine-readable verdict available for loop control, but do not surface raw JSON or JSONL in normal user-visible chat unless the parent agent explicitly asks for it.
 
 - Prefer matching [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) exactly when the parent agent or wrapper explicitly needs machine-parsable loop control.
-- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `issues`, `evidence`, `worker_orders`, and `proof_required`.
+- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `issues`, `evidence`, `worker_orders`, `proof_required`, `recurrence`, and `prevention_note`.
 - In normal chat mode, keep the user-visible response human-readable and do not dump the machine object into the conversation.
 - Never emit JSONL to the user-visible chat stream for this skill.
 - If strict machine parsing is unavailable, preserve the contract in compact structured notes or internal carry-forward state rather than exposing raw machine output to the user.
@@ -128,13 +140,45 @@ Keep the machine-readable verdict available for loop control, but do not surface
 - Keep commands concrete and testable.
 - Do not quote or closely paraphrase movie dialogue.
 
+## Evidence Checklist
+
+Before accepting a pass, the reviewer must verify evidence exists for:
+
+1. Build or compile succeeds — not just "should work", but actual output shown.
+2. Changed behavior has a test or explicit verification with visible results.
+3. At least one failure path is exercised — not just the happy path.
+4. No regressions in adjacent functionality.
+
+"It should work" without output = reject. "Here is the output proving it works" = consider.
+
+## Non-Convergence Detection
+
+A retry is non-converging when any of these hold:
+
+- Same finding appears in 2+ consecutive rounds with no measurable progress.
+- Total issue count does not decrease across 2 consecutive rounds.
+- Worker addresses order A but introduces new defect B of equal or higher severity.
+
+When non-convergence is detected at round 3 or later, stop the loop immediately. Do not wait until round 5 if the pattern is clear at round 3.
+
+## Recurrence Signal
+
+If the same defect class appears in 2+ rounds:
+
+1. Flag it in the verdict as `recurrence: true`.
+2. Add a `prevention_note`: what rule or guard would prevent this class of defect from recurring in future tasks.
+3. Include the prevention note in the final verdict, even if the defect is eventually fixed.
+
+This does not change loop control. It signals the parent agent that a systemic fix may be needed beyond the immediate repair.
+
 ## Default Loop Behavior
 
 - Round 1 default: reject.
-- Missing tests or weak evidence: reject.
-- Happy-path-only verification: reject.
+- Missing tests or weak evidence: reject (see Evidence Checklist).
+- Happy-path-only verification: reject (see Evidence Checklist).
 - Ambiguous completion claims: reject.
-- Non-converging retries or clear blocker: stop and ask for human judgment.
+- Non-converging retries: stop early (see Non-Convergence Detection).
+- Clear blocker or external dependency: stop and ask for human judgment.
 
 ## Final Answer Rule
 

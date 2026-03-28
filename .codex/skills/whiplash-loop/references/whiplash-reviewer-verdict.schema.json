@@ -13,7 +13,9 @@
     "issues",
     "evidence",
     "worker_orders",
-    "proof_required"
+    "proof_required",
+    "recurrence",
+    "prevention_note"
   ],
   "properties": {
     "decision": {
@@ -104,6 +106,14 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "recurrence": {
+      "type": "boolean",
+      "description": "True if the same defect class appeared in 2+ consecutive rounds"
+    },
+    "prevention_note": {
+      "type": "string",
+      "description": "What rule or guard would prevent this defect class from recurring in future tasks. Empty string if recurrence is false."
     }
   }
 }

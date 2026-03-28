@@ -36,6 +36,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 머신 verdict JSON은 내부용 — 챗 출력에 raw JSON 노출 금지
 - `whiplash-reviewer-profile.md`는 named agent 미지원 런타임용 폴백
 - Verdict 스키마는 `skills/`와 `agents/` 양쪽에 의도적 중복 배치 (독립 해석 보장)
+- 재시도 전략 로테이션: Round 2 직접수정 → Round 3 구조변경 → Round 4 리셋접근 (같은 전략 반복 금지)
+- 비수렴 조기 감지: 같은 finding 2회 연속 or 이슈 수 미감소 → Round 3부터 조기 중단
+- 재발 방지 시그널: `recurrence` + `prevention_note` 필드로 상위 시스템에 학습 시그널 전달
 
 ## 파일 수정 시 주의사항
 
