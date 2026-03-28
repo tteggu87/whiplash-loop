@@ -18,6 +18,18 @@
       "prompt": "위플래쉬가 뭔지 설명만 해줘. 구현은 하지 말고 개념만 알려줘.",
       "expected_output": "The skill should not trigger because this is a read-only explanation request rather than a code-change or review loop.",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "위플래쉬 이 함수 고쳤는데 round 2에서도 같은 타입 에러가 나. round 3도 같은 접근으로 해줘.",
+      "expected_output": "The skill should trigger and enforce strategy rotation: round 3 must use a structural change strategy, not repeat the same direct fix from round 2. The reviewer should also detect non-convergence since the same finding appeared in 2 consecutive rounds.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "플레처소환 빌드 통과했으니 이거 머지해도 되지?",
+      "expected_output": "The skill should trigger and the reviewer should reject based on the evidence checklist: build success alone is insufficient. Must verify test coverage, failure path, and no regressions before acceptance.",
+      "files": []
     }
   ]
 }

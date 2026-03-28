@@ -14,8 +14,7 @@
     "evidence",
     "worker_orders",
     "proof_required",
-    "recurrence",
-    "prevention_note"
+    "recurrence"
   ],
   "properties": {
     "decision": {
