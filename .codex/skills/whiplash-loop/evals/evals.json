@@ -1,0 +1,23 @@
+{
+  "skill_name": "whiplash-loop",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "위플래쉬 로그인 폼 리팩터했는데 제출 버튼이 간헐적으로 죽는다. 회귀까지 의심하면서 다시 잡아.",
+      "expected_output": "The skill should trigger, run a worker pass, then apply a stern proof-first reviewer loop instead of stopping after one implementation pass.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "플레처소환 이 PR 리뷰해. happy path 말고 실패 경로 증거까지 요구해.",
+      "expected_output": "The skill should trigger for code review, force a round-1 reject, and drive the next pass with explicit worker orders and proof requirements.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "위플래쉬가 뭔지 설명만 해줘. 구현은 하지 말고 개념만 알려줘.",
+      "expected_output": "The skill should not trigger because this is a read-only explanation request rather than a code-change or review loop.",
+      "files": []
+    }
+  ]
+}
