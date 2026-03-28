@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision",
+    "summary",
+    "retryable",
+    "needs_human",
+    "continue_loop",
+    "loop_exit_reason",
+    "recommended_next_action",
+    "issues",
+    "evidence",
+    "worker_orders",
+    "proof_required"
+  ],
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": ["pass", "fail"]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "needs_human": {
+      "type": "boolean"
+    },
+    "continue_loop": {
+      "type": "boolean"
+    },
+    "loop_exit_reason": {
+      "type": "string"
+    },
+    "recommended_next_action": {
+      "type": "string",
+      "enum": ["finish", "retry_worker", "ask_human"]
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "message", "file", "line", "suggested_fix"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "suggested_fix": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "status", "details"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["test", "lint", "typecheck", "build", "manual", "diff", "reasoning"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "fail", "not_run", "unclear"]
+          },
+          "details": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "worker_orders": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "proof_required": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

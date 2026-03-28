@@ -1,0 +1,6 @@
+interface:
+  display_name: "whiplash-loop"
+  short_description: "Chat-first Fletcher-style worker/reviewer retry loop"
+  default_prompt: "Use whiplash-loop for this task."
+policy:
+  allow_implicit_invocation: true
