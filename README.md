@@ -6,6 +6,7 @@
 
 ## What It Does
 
+- shows the PR2-style Whiplash ASCII banner at activation time
 - uses `whiplash-reviewer` as a separated Fletcher orchestrator
 - hides the round-1 mandatory reject from workers
 - runs a default 3-worker swarm (`low`, `medium`, `high`)
@@ -16,6 +17,8 @@
 - stops instead of silently degrading when full reviewer separation or full 3-worker fan-out is unavailable
 - retries noncompliant workers or reviewers once before accepting malformed loop behavior
 - uses non-git verification evidence when the task runs outside a Git repository
+- rotates retry strategy across rounds instead of repeating the same failed move
+- tracks recurrence plus a prevention note for defect classes that keep returning
 - supports structured verdict data for internal loop control
 
 ## Main Files
@@ -56,7 +59,7 @@ This is the current Whiplash v2 design.
 
 ```mermaid
 flowchart TD
-    A["User prompt includes trigger"] --> B["whiplash-loop skill"]
+    A["User prompt includes trigger"] --> B["Show Whiplash banner"]
     B --> C["Require separated reviewer"]
     C --> D{"Reviewer separation available?"}
     D -->|No| E["Stop or ask for degraded mode"]
@@ -80,31 +83,37 @@ flowchart TD
     M2 --> N
     M3 --> N
     N --> O["Hidden round-1 reject"]
-    O --> P["Comparative critique"]
+    O --> P["Comparative critique + recurrence tracking"]
     P --> Q{"Reviewer compliant?"}
     Q -->|No| R["Respawn reviewer once with same state"]
-    R --> S["Verbatim Orders to worker + Proof required"]
     Q -->|Yes| S["Verbatim Orders to worker + Proof required"]
-    S --> T{"Retry strategy after first critique?"}
-    T -->|All| U["Retry swarm"]
-    T -->|Lead worker| V["Retry lead worker with comparative notes"]
-    T -->|Role split| W["Focused split retry"]
-    U --> X["Use non-git evidence when git metadata is unavailable"]
-    V --> X
-    W --> X
-    X --> N
-    N --> Y{"Pass / ask human / continue?"}
-    Y -->|Pass| Z["Finish"]
-    Y -->|Ask human| AA["Stop"]
+    R --> S
+    S --> T{"Retry strategy for this round?"}
+    T -->|Round 2| U["Direct fix retry"]
+    T -->|Round 3| V["Structural change retry"]
+    T -->|Round 4| W["Reset approach retry"]
+    T -->|Round 5| X["Last chance retry"]
+    U --> Y["Use non-git evidence when git metadata is unavailable"]
+    V --> Y
+    W --> Y
+    X --> Y
+    Y --> Z{"Pass / ask human / continue?"}
+    Z -->|Continue| N
+    Z -->|Pass| AA["Finish"]
+    Z -->|Ask human| AB["Stop"]
 ```
 
 ## Runtime Notes
 
+- Activation currently includes the PR2-style banner before the loop begins.
 - Full Whiplash v2 requires reviewer separation and the full 3-worker swarm. If either is unavailable, the loop should stop and ask for degraded mode instead of silently collapsing.
 - Round 1 is always the same task to all workers. Early topic split is not part of the design.
 - Worker or reviewer noncompliance is retried once before the loop accepts that failure mode as real.
 - On fail rounds, `Orders to worker` should be shown verbatim before any higher-level explanation.
 - Outside Git repositories, verification should rely on file contents, hashes, byte checks, listings, or targeted command output rather than failing `git diff` as core evidence.
+- Retry strategy rotates across rounds: direct fix, structural change, reset approach, then last chance.
+- Evidence must cover build-or-equivalent output, changed behavior, at least one failure path, and no-regression confidence.
+- Repeated defect classes should be surfaced through `recurrence` and `prevention_note`.
 
 ## Note On The Logo
 

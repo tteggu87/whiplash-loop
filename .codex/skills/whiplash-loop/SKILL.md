@@ -5,6 +5,8 @@ description: Use when the user message includes "위플래쉬" or "플레처소�
 
 # Whiplash Loop
 
+When this skill activates, display the ASCII banner from [assets/banner.txt](assets/banner.txt) at the start of the response before any other output. If the file is unavailable, skip the banner silently.
+
 Use this skill only for code-change or review tasks triggered by `위플래쉬` or `플레처소환`.
 
 Do not use this loop for casual chat, simple Q&A, brainstorming, or read-only explanation requests.
@@ -67,16 +69,30 @@ Track at least:
 
 - current round number
 - active worker set
+- current retry strategy
 - unresolved findings
 - comparative critique notes
 - worker scorecard
 - leading worker, if one exists
 - current `worker_orders`
 - current `proof_required`
+- recurrence status
+- prevention note, if one exists
 - carried-over residual risk
 - latest `continue_loop` decision
 
 Before each new worker pass, restate the loop state in a compact block so the next pass knows exactly what is still open.
+
+## Retry Strategy Rotation
+
+When the loop fails multiple rounds, rotate strategy. Do not retry the same approach twice.
+
+- Round 2 (1st retry): direct fix. Address the exact defect reported with the smallest credible repair.
+- Round 3 (2nd retry): structural change. Change the approach, control flow, type boundary, or validation pattern rather than repeating the same fix.
+- Round 4 (3rd retry): reset approach. Revert the failed direction and re-implement from a different design angle.
+- Round 5: last chance. If the loop is still failing after three different retry strategies, treat the work as non-converging unless the reviewer can point to measurable progress.
+
+The reviewer should make the current retry strategy explicit in the `worker_orders` or the comparative critique.
 
 ## Next Worker Pass
 
@@ -86,11 +102,12 @@ When the reviewer fails a round:
 2. Carry forward the comparative critique notes and worker scorecard.
 3. Copy the reviewer `worker_orders` into the next worker pass.
 4. Copy the reviewer `proof_required` into the next worker pass.
-5. Make the next worker pass address those items before adding any optional polish.
-6. Keep the next worker pass focused on defect closure and proof.
-7. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
-8. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
-9. Role split or task split is allowed only after the first comparative review has established a reason to diverge.
+5. Select the retry strategy for the current round using `Retry Strategy Rotation`.
+6. Make the next worker pass address those items before adding any optional polish.
+7. Keep the next worker pass focused on defect closure and proof.
+8. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
+9. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
+10. Role split or task split is allowed only after the first comparative review has established a reason to diverge.
 
 ## Verification Boundaries
 
@@ -159,6 +176,8 @@ Map the review to this contract:
 - `evidence`: proof already seen, missing, or unclear
 - `worker_orders`: short, forceful English imperative commands
 - `proof_required`: exact evidence needed before acceptance
+- `recurrence`: whether the same defect class is repeating across rounds
+- `prevention_note`: the systemic guard or rule that would prevent recurrence next time
 
 Read [references/whiplash-reviewer-profile.md](references/whiplash-reviewer-profile.md) for the reviewer role and [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) for the stricter contract when needed.
 
@@ -167,7 +186,7 @@ Read [references/whiplash-reviewer-profile.md](references/whiplash-reviewer-prof
 Keep the machine-readable verdict available for loop control, but do not surface raw JSON or JSONL in normal user-visible chat unless the parent agent explicitly asks for it.
 
 - Prefer matching [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) exactly when the parent agent or wrapper explicitly needs machine-parsable loop control.
-- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `lead_worker`, `worker_scorecard`, `issues`, `evidence`, `worker_orders`, and `proof_required`.
+- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `lead_worker`, `worker_scorecard`, `issues`, `evidence`, `worker_orders`, `proof_required`, `recurrence`, and `prevention_note`.
 - In normal chat mode, keep the user-visible response human-readable and do not dump the machine object into the conversation.
 - Never emit JSONL to the user-visible chat stream for this skill.
 - If strict machine parsing is unavailable, preserve the contract in compact structured notes or internal carry-forward state rather than exposing raw machine output to the user.
@@ -180,6 +199,37 @@ Keep the machine-readable verdict available for loop control, but do not surface
 - Keep commands concrete and testable.
 - Do not quote or closely paraphrase movie dialogue.
 
+## Evidence Checklist
+
+Before the reviewer accepts a pass, verify that evidence exists for all of these:
+
+1. Build, compile, or equivalent execution-level verification succeeds with visible output.
+2. The changed behavior is covered by a test or an explicit verification step with visible results.
+3. At least one failure path or invalid-input path is exercised, not only the happy path.
+4. Adjacent behavior shows no regression evidence for the affected area.
+
+`It should work` without output is not proof. Reject it.
+
+## Non-Convergence Detection
+
+Treat the loop as non-converging when any of these are true:
+
+- The same finding appears in 2 or more consecutive rounds without measurable progress.
+- The total issue count does not decrease across 2 consecutive rounds.
+- The worker closes one defect but introduces another of equal or higher severity.
+
+If non-convergence is clear by round 3 or later, stop early and ask for human judgment. Do not wait for round 5 by reflex.
+
+## Recurrence Signal
+
+If the same defect class appears in 2 or more rounds:
+
+1. Set `recurrence` to `true`.
+2. Add a `prevention_note` describing what guard, test, validation rule, or design constraint would prevent this class of defect next time.
+3. Keep that prevention note in the final verdict even if the immediate defect is eventually fixed.
+
+This signal does not change the retry loop by itself. It exists so the parent agent can decide whether a systemic follow-up is needed.
+
 ## Default Loop Behavior
 
 - Round 1 default: reject.
@@ -187,8 +237,10 @@ Keep the machine-readable verdict available for loop control, but do not surface
 - Round 1 reject is hidden from workers until the orchestrator delivers comparative critique.
 - Missing tests or weak evidence: reject.
 - Happy-path-only verification: reject.
+- Missing any item in the Evidence Checklist: reject.
 - Ambiguous completion claims: reject.
-- Non-converging retries or clear blocker: stop and ask for human judgment.
+- Non-converging retries: stop early and ask for human judgment.
+- Clear blocker or external dependency: stop and ask for human judgment.
 
 ## Final Answer Rule
 
