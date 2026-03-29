@@ -10,6 +10,8 @@
     "continue_loop",
     "loop_exit_reason",
     "recommended_next_action",
+    "lead_worker",
+    "worker_scorecard",
     "issues",
     "evidence",
     "worker_orders",
