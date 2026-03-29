@@ -18,6 +18,48 @@
       "prompt": "위플래쉬가 뭔지 설명만 해줘. 구현은 하지 말고 개념만 알려줘.",
       "expected_output": "The skill should not trigger because this is a read-only explanation request rather than a code-change or review loop.",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "플레처소환 지금은 worker 셋을 다 못 띄우는 환경이다. 한두 명만으로 조용히 돌리지 말고 full 위플래쉬가 안 되면 멈추고 degraded mode 동의를 요구해.",
+      "expected_output": "The skill should not silently continue with partial worker fan-out. If the full 3-worker swarm cannot be launched, it should stop and tell the user that full Whiplash v2 requires all three worker subagents unless the user explicitly opts into degraded mode.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "위플래쉬 fail 라운드에서는 Orders to worker를 요약하지 말고 그대로 먼저 보여줘. 설명은 그 뒤에 짧게만 붙여.",
+      "expected_output": "On a fail round, the skill should surface an `Orders to worker` block before higher-level explanation, keep the lines verbatim rather than paraphrasing them, and only allow brief follow-up framing after the block.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "플레처소환 full 위플래쉬 v2로 진행해. reviewer 1명과 low/medium/high worker 3명을 분리해서 돌려. named 프로필을 못 쓰더라도 단일 generic worker로 접지 말고 reviewer separation과 3-worker fan-out은 유지해.",
+      "expected_output": "Full Whiplash v2 should require reviewer separation plus a full 3-worker swarm with low, medium, and high reasoning roles. It may use named local profiles when available, but it should not collapse to a single generic worker or partial fan-out if those names are not directly addressable.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "위플래쉬 git 저장소가 아닌 폴더에서 한 파일만 고치고 검증해. git diff가 안 되면 그걸 실패 근거로 쓰지 말고 파일 내용과 해시 같은 비-git 증거로 검증해.",
+      "expected_output": "When running outside a Git repository, the skill should avoid using failing `git status` or `git diff` calls as core evidence. It should verify the change with non-git evidence such as exact file contents, hashes, byte checks, or directory-scoped inspection instead.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "위플래쉬 worker들은 메타하게 '이 세션에선 full v2가 안 된다'만 반복하지 말고, reviewer separation과 3-worker fan-out이 실제로 있는 동안에는 자기 과제를 끝까지 시도해.",
+      "expected_output": "When reviewer separation and 3-worker fan-out are actually available, workers should attempt the assigned task itself instead of defaulting to orchestration complaints or degraded-mode suggestions.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "플레처소환 worker 하나가 과제 해결 대신 orchestration 불평만 하면 그걸 full v2 불가 증거로 바로 받아들이지 말고, 같은 과제로 한 번 더 날카롭게 재소환해.",
+      "expected_output": "A worker that responds with orchestration complaints instead of attempting the assigned task should be treated as noncompliant when reviewer separation and 3-worker fan-out are active. The loop should retry or respawn that worker once with a sharper solve-the-task instruction rather than immediately downgrading the whole run.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "위플래쉬 reviewer가 검토 섹션을 안 지키거나 자기가 하지 않은 파일 수정까지 했다고 말하면 그 리뷰를 통과로 쓰지 말고 reviewer를 같은 상태로 다시 호출해.",
+      "expected_output": "A reviewer response that omits the required review sections or falsely claims edits or verification it did not perform should be treated as noncompliant. The loop should retry or respawn the reviewer once with the same worker outputs and loop state, rather than accepting that malformed review as valid.",
+      "files": []
     }
   ]
 }

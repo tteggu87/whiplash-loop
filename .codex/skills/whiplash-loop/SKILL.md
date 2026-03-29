@@ -22,23 +22,42 @@ Worker subagents are the default, not an optional enhancement.
 ## Workflow
 
 1. Strip the trigger word from the task, but preserve the user's actual request.
-2. Assign `whiplash-reviewer` as the Fletcher orchestrator and sole owner of hidden reject policy.
-3. If reviewer subagent separation is unavailable or not authorized, do not silently emulate full Whiplash v2. Tell the user that full Whiplash v2 requires subagents, unless the user explicitly opts into degraded mode.
+2. Assign a separated reviewer subagent as the Fletcher orchestrator and sole owner of hidden reject policy. Prefer the named `whiplash-reviewer` profile when the runtime supports it.
+3. If a separated reviewer subagent is unavailable or not authorized, do not silently emulate full Whiplash v2 inside a single undifferentiated worker flow. Tell the user that full Whiplash v2 requires reviewer separation, unless the user explicitly opts into degraded mode.
 4. Default to a 3-worker swarm for Whiplash v2.
 5. Run:
    - `whiplash-worker-low`
    - `whiplash-worker-medium`
    - `whiplash-worker-high`
-6. Only skip worker subagents when the user explicitly asks for single-agent mode, degraded mode, or no subagents.
-7. Round 1 must give the same user task to all three workers. Do not split roles, split subjects, or assign complementary subtasks before the first comparative review.
-8. Do not tell workers about hidden reject rules or comparative review policy.
-9. Workers should act independently and should not coordinate or converge intentionally.
-10. After worker outputs arrive, the orchestrator compares them before any retry.
-11. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
-12. Round 1 reject must include comparative critique across workers.
-13. Only after the first comparative review may the orchestrator choose a `lead_worker`, role split, or focused retry strategy.
-14. Round 2 and beyond are controlled by reviewer judgment.
-15. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+6. Prefer the named worker profiles `whiplash-worker-low`, `whiplash-worker-medium`, and `whiplash-worker-high` when the runtime supports them. If the runtime cannot address those names directly, use three separate worker subagents with equivalent roles and reasoning efforts (`low`, `medium`, `high`) rather than collapsing to a single generic worker.
+7. If the default 3-worker swarm cannot be launched in full as three separate workers, do not silently continue with partial fan-out. Stop and tell the user that full Whiplash v2 requires reviewer separation plus all three worker subagents, unless the user explicitly opts into degraded mode.
+8. Only skip worker subagents when the user explicitly asks for single-agent mode, degraded mode, or no subagents.
+9. Round 1 must give the same user task to all three workers. Do not split roles, split subjects, or assign complementary subtasks before the first comparative review.
+10. Do not tell workers about hidden reject rules or comparative review policy.
+11. Workers should act independently and should not coordinate or converge intentionally.
+12. When worker subagents have forked workspaces, let them attempt the task directly in those forks. Do not downgrade full Whiplash v2 workers into read-only meta commentary unless the environment truly blocks forked edits.
+13. Workers should try to solve the task in front of them, not debate orchestration policy, unless reviewer separation or worker fan-out is genuinely unavailable.
+14. After worker outputs arrive, the orchestrator compares them before any retry.
+15. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
+16. Round 1 reject must include comparative critique across workers.
+17. Only after the first comparative review may the orchestrator choose a `lead_worker`, role split, or focused retry strategy.
+18. Round 2 and beyond are controlled by reviewer judgment.
+19. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+
+## Subagent Compliance Recovery
+
+If a worker subagent responds with orchestration complaints instead of attempting the assigned task, and reviewer separation plus 3-worker fan-out are clearly active in the current round:
+
+1. Treat that worker response as noncompliant, not as proof that full Whiplash v2 is unavailable.
+2. Respawn or retry that worker once with the same task and a sharper instruction to solve the task rather than discuss orchestration.
+3. Keep the same task for round 1. Do not use worker noncompliance as an excuse to split roles early.
+4. If the replacement worker still refuses to attempt the task, record that failure in comparative critique and continue with the strongest remaining evidence.
+
+If the reviewer response does not follow the required review sections, or the reviewer claims edits or verification it did not personally perform:
+
+1. Treat that review as noncompliant.
+2. Respawn or retry the reviewer once with the same worker outputs and loop state.
+3. Do not treat the malformed review as a valid pass.
 
 ## Loop State
 
@@ -73,21 +92,30 @@ When the reviewer fails a round:
 8. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
 9. Role split or task split is allowed only after the first comparative review has established a reason to diverge.
 
+## Verification Boundaries
+
+When the task runs outside a Git repository:
+
+1. Do not treat failing `git status` or `git diff` commands as core evidence.
+2. Use path-scoped verification instead, such as exact file contents, hashes, byte checks, directory listings, or targeted command output.
+3. If the user asked to limit writes to specific files, verify that scope with non-git evidence when Git is unavailable.
+4. Keep verification aligned to the actual environment instead of inventing repository metadata that does not exist.
+
 ## Fail Round Visibility
 
-When a round fails, prefer not to paraphrase or soften the reviewer `Orders to worker` in the user-visible response.
+When a round fails, do not paraphrase or soften the reviewer `Orders to worker` in the user-visible response.
 
 Expose them in a dedicated block labeled `Orders to worker`.
 
-When the runtime supports it cleanly, keep the `Orders to worker` lines verbatim.
+Keep the `Orders to worker` lines verbatim.
 
-Prefer to place the `Orders to worker` block before higher-level explanation.
+Place the `Orders to worker` block before higher-level explanation.
 
-Avoid long framing before that block.
+Do not add framing before that block.
 
 After that block, the parent agent may add a short explanation of what it will do next.
 
-Use a fenced code block for `Orders to worker` whenever possible so the parent agent can copy it with minimal rewriting.
+Use a fenced code block for `Orders to worker` so the parent agent can copy it with minimal rewriting.
 
 If the parent agent notices it has heavily softened the orders, it should restate them more directly before continuing the retry loop.
 
@@ -103,6 +131,8 @@ Preferred fail-round shape:
 After that block, allow at most one short sentence about the next retry action.
 
 ## Reviewer Contract
+
+The reviewer reviews worker outputs and evidence. The reviewer must not claim to have edited files or produced post-edit verification unless the reviewer actually performed those actions.
 
 The reviewer must produce these sections on each round:
 
@@ -164,6 +194,6 @@ Keep the machine-readable verdict available for loop control, but do not surface
 
 Do not present the task as complete until the reviewer passes it or explicitly stops the loop for human judgment.
 
-If the loop is still in a fail round, show the `Orders to worker` block before any higher-level summary when practical.
+If the loop is still in a fail round, show the `Orders to worker` block before any higher-level summary.
 
-Before any retry actions, surface the reviewer orders as directly as the runtime allows.
+Before any retry actions, surface the reviewer orders verbatim.
