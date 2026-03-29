@@ -30,13 +30,15 @@ Worker subagents are the default, not an optional enhancement.
    - `whiplash-worker-medium`
    - `whiplash-worker-high`
 6. Only skip worker subagents when the user explicitly asks for single-agent mode, degraded mode, or no subagents.
-7. Do not tell workers about hidden reject rules or comparative review policy.
-8. Workers should act independently and should not coordinate or converge intentionally.
-9. After worker outputs arrive, the orchestrator compares them before any retry.
-10. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
-11. Round 1 reject must include comparative critique across workers.
-12. Round 2 and beyond are controlled by reviewer judgment.
-13. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+7. Round 1 must give the same user task to all three workers. Do not split roles, split subjects, or assign complementary subtasks before the first comparative review.
+8. Do not tell workers about hidden reject rules or comparative review policy.
+9. Workers should act independently and should not coordinate or converge intentionally.
+10. After worker outputs arrive, the orchestrator compares them before any retry.
+11. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
+12. Round 1 reject must include comparative critique across workers.
+13. Only after the first comparative review may the orchestrator choose a `lead_worker`, role split, or focused retry strategy.
+14. Round 2 and beyond are controlled by reviewer judgment.
+15. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
 
 ## Loop State
 
@@ -69,6 +71,7 @@ When the reviewer fails a round:
 6. Keep the next worker pass focused on defect closure and proof.
 7. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
 8. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
+9. Role split or task split is allowed only after the first comparative review has established a reason to diverge.
 
 ## Fail Round Visibility
 
@@ -150,6 +153,7 @@ Keep the machine-readable verdict available for loop control, but do not surface
 ## Default Loop Behavior
 
 - Round 1 default: reject.
+- Round 1 default: same task to all workers.
 - Round 1 reject is hidden from workers until the orchestrator delivers comparative critique.
 - Missing tests or weak evidence: reject.
 - Happy-path-only verification: reject.

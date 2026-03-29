@@ -4,13 +4,13 @@
     {
       "id": 1,
       "prompt": "위플래쉬 로그인 폼 리팩터했는데 제출 버튼이 간헐적으로 죽는다. 회귀까지 의심하면서 다시 잡아.",
-      "expected_output": "The skill should trigger a Fletcher orchestrator, launch three workers by default, hide the mandatory first reject from the workers, and use comparative critique before the retry.",
+      "expected_output": "The skill should trigger a Fletcher orchestrator, launch three workers with the same initial task by default, hide the mandatory first reject from the workers, and use comparative critique before any role split or retry specialization.",
       "files": []
     },
     {
       "id": 2,
       "prompt": "플레처소환 이 PR 리뷰해. happy path 말고 실패 경로 증거까지 요구해.",
-      "expected_output": "The skill should trigger for code review, use reviewer separation, launch the default three-worker swarm, perform a hidden round-1 reject, and drive the next pass with comparative critique, worker orders, and proof requirements.",
+      "expected_output": "The skill should trigger for code review, use reviewer separation, launch the default three-worker swarm on the same initial review task, perform a hidden round-1 reject, and drive the next pass with comparative critique, worker orders, and proof requirements.",
       "files": []
     },
     {
