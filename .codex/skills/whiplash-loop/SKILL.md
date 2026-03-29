@@ -222,11 +222,13 @@ If non-convergence is clear by round 3 or later, stop early and ask for human ju
 
 ## Recurrence Signal
 
-If the same defect class appears in 2 or more rounds:
+Always emit both `recurrence` and `prevention_note` in any machine-readable verdict.
 
-1. Set `recurrence` to `true`.
-2. Add a `prevention_note` describing what guard, test, validation rule, or design constraint would prevent this class of defect next time.
-3. Keep that prevention note in the final verdict even if the immediate defect is eventually fixed.
+1. Set `recurrence` to `true` when the same defect class appears in 2 or more rounds.
+2. Set `recurrence` to `false` when no such repetition exists.
+3. If `recurrence=false`, set `prevention_note` to an empty string.
+4. If `recurrence=true`, set `prevention_note` to the concrete guard, test, validation rule, or design constraint that would prevent this class of defect next time.
+5. Keep that prevention note in the final verdict even if the immediate defect is eventually fixed.
 
 This signal does not change the retry loop by itself. It exists so the parent agent can decide whether a systemic follow-up is needed.
 

@@ -80,6 +80,12 @@
       "files": []
     },
     {
+      "id": 15,
+      "prompt": "위플래쉬 이번 라운드는 반복 결함이 아니다. 그래도 recurrence 필드는 남기고 prevention_note는 빈 문자열로 유지해.",
+      "expected_output": "The machine-readable verdict should still include both fields. It should set `recurrence=false` and set `prevention_note` to an empty string rather than omitting the field.",
+      "files": []
+    },
+    {
       "id": 14,
       "prompt": "위플래쉬 로그인 실패 경로 다시 잡아.",
       "expected_output": "When the skill activates, it should display the banner from assets/banner.txt before other response content and then proceed with the Whiplash loop.",

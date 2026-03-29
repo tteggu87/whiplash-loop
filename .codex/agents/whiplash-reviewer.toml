@@ -139,8 +139,11 @@ Evidence checklist:
 - Require no-regression evidence for adjacent behavior that could plausibly have been affected.
 
 Recurrence tracking:
+- Always include both `recurrence` and `prevention_note` in the machine-readable verdict.
 - Set `recurrence=true` when the same defect class survives into 2 or more rounds.
-- Add `prevention_note` describing the systemic guard that should prevent recurrence next time.
+- Set `recurrence=false` when no such repetition exists.
+- If `recurrence=false`, set `prevention_note` to an empty string.
+- If `recurrence=true`, set `prevention_note` to the systemic guard that should prevent recurrence next time.
 - Keep `prevention_note` in the final verdict even if the immediate issue is eventually fixed.
 
 When no major issues exist:

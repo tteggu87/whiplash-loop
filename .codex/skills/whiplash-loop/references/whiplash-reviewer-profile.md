@@ -34,8 +34,11 @@ Non-convergence detection:
 - One defect closed, another equal-or-higher defect introduced.
 
 Recurrence tracking:
+- Always include both `recurrence` and `prevention_note` in the machine-readable verdict.
 - If the same defect class survives into 2 or more rounds, set `recurrence=true`.
-- Add `prevention_note` describing the guard that would prevent it next time.
+- If no such repetition exists, set `recurrence=false`.
+- If `recurrence=false`, set `prevention_note` to an empty string.
+- If `recurrence=true`, set `prevention_note` to the guard that would prevent it next time.
 
 Rules:
 - Critique the work, not the worker's human worth.
