@@ -1,6 +1,6 @@
 ---
 name: whiplash-loop
-description: Use when the user message includes "위플래쉬" or "플레처소환" and the task is implementation, bug fixing, refactoring, debugging, or code review in chat. Applies a Fletcher-orchestrated retry loop with mandatory reviewer separation, hidden round-1 reject, comparative critique across independent workers, forceful English worker orders, and up to 5 review rounds. Prefer this skill when the user wants a stronger proof-first loop than a normal one-pass answer.
+description: Use when the user message includes "위플래쉬" or "플레처소환" and the task is implementation, bug fixing, refactoring, debugging, or code review in chat. Applies a Fletcher-orchestrated retry loop with mandatory reviewer separation, a default 3-worker subagent swarm, hidden round-1 reject, comparative critique across independent workers, forceful English worker orders, and up to 5 review rounds. Prefer this skill when the user wants a stronger proof-first loop than a normal one-pass answer.
 ---
 
 # Whiplash Loop
@@ -17,25 +17,26 @@ This skill is optimized for a reviewer-led retry loop in chat with comparative c
 
 Reviewer separation is mandatory for full Whiplash v2.
 
+Worker subagents are the default, not an optional enhancement.
+
 ## Workflow
 
 1. Strip the trigger word from the task, but preserve the user's actual request.
 2. Assign `whiplash-reviewer` as the Fletcher orchestrator and sole owner of hidden reject policy.
 3. If reviewer subagent separation is unavailable or not authorized, do not silently emulate full Whiplash v2. Tell the user that full Whiplash v2 requires subagents, unless the user explicitly opts into degraded mode.
-4. Classify task size:
-   - trivial mechanical edits or very small read-only reviews may use one worker with justification
-   - all meaningful code-change, debugging, refactor, or review tasks should use three independent workers
-5. For multi-worker mode, run:
+4. Default to a 3-worker swarm for Whiplash v2.
+5. Run:
    - `whiplash-worker-low`
    - `whiplash-worker-medium`
    - `whiplash-worker-high`
-6. Do not tell workers about hidden reject rules or comparative review policy.
-7. Workers should act independently and should not coordinate or converge intentionally.
-8. After worker outputs arrive, the orchestrator compares them before any retry.
-9. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
-10. Round 1 reject must include comparative critique across workers.
-11. Round 2 and beyond are controlled by reviewer judgment.
-12. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+6. Only skip worker subagents when the user explicitly asks for single-agent mode, degraded mode, or no subagents.
+7. Do not tell workers about hidden reject rules or comparative review policy.
+8. Workers should act independently and should not coordinate or converge intentionally.
+9. After worker outputs arrive, the orchestrator compares them before any retry.
+10. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
+11. Round 1 reject must include comparative critique across workers.
+12. Round 2 and beyond are controlled by reviewer judgment.
+13. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
 
 ## Loop State
 
@@ -67,6 +68,7 @@ When the reviewer fails a round:
 5. Make the next worker pass address those items before adding any optional polish.
 6. Keep the next worker pass focused on defect closure and proof.
 7. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
+8. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
 
 ## Fail Round Visibility
 

@@ -1,6 +1,6 @@
 interface:
   display_name: "whiplash-loop"
-  short_description: "Fletcher-orchestrated comparative retry loop with hidden reject and worker swarm"
-  default_prompt: "Use whiplash-loop when the user explicitly wants a stronger proof-first, Fletcher-style orchestration loop for a code-change or code-review task, with separate reviewer judgment and comparative critique."
+  short_description: "Fletcher-orchestrated comparative retry loop with default 3-worker swarm"
+  default_prompt: "Use whiplash-loop when the user explicitly wants a stronger proof-first, Fletcher-style orchestration loop for a code-change or code-review task, with separate reviewer judgment and a default 3-worker swarm."
 policy:
   allow_implicit_invocation: true
