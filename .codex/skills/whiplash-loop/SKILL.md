@@ -1,6 +1,6 @@
 ---
 name: whiplash-loop
-description: Use when the user message includes "위플래쉬" or "플레처소환" and the task is implementation, bug fixing, refactoring, debugging, or code review in chat. Applies an evidence-driven, reviewer-led chat retry loop for code-change tasks, with a mandatory round-1 reject, forceful English worker orders, and up to 5 review rounds. Prefer this skill when the user wants a stronger proof-first retry loop rather than a normal one-pass answer.
+description: Use when the user message includes "위플래쉬" or "플레처소환" and the task is implementation, bug fixing, refactoring, debugging, or code review in chat. Applies a Fletcher-orchestrated retry loop with mandatory reviewer separation, hidden round-1 reject, comparative critique across independent workers, forceful English worker orders, and up to 5 review rounds. Prefer this skill when the user wants a stronger proof-first loop than a normal one-pass answer.
 ---
 
 # Whiplash Loop
@@ -11,23 +11,31 @@ Do not use this loop for casual chat, simple Q&A, brainstorming, or read-only ex
 
 ## Goal
 
-Run a chat-first worker and reviewer loop that pushes for proof before acceptance.
+Run a Fletcher-orchestrated worker and reviewer loop that pushes for proof before acceptance.
 
-This skill is optimized for a reviewer-led retry loop in chat.
+This skill is optimized for a reviewer-led retry loop in chat with comparative critique.
 
-It does not guarantee a separate subagent reviewer in every runtime.
+Reviewer separation is mandatory for full Whiplash v2.
 
 ## Workflow
 
 1. Strip the trigger word from the task, but preserve the user's actual request.
-2. Perform the main worker pass first.
-3. Attach a review stage immediately after the worker pass.
-4. Use `whiplash-reviewer` as the default reviewer role.
-5. If subagent delegation is available in the current session and the user has explicitly asked for delegation or subagents, run `whiplash-reviewer` as a separate reviewer subagent.
-6. Otherwise, keep the reviewer boundary explicit in the current thread and do not pretend that a separate reviewer process was guaranteed.
-7. Round 1 is a mandatory calibration rejection unless the correct outcome is immediate human escalation.
-8. Round 2 and beyond are controlled by reviewer judgment.
-9. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+2. Assign `whiplash-reviewer` as the Fletcher orchestrator and sole owner of hidden reject policy.
+3. If reviewer subagent separation is unavailable or not authorized, do not silently emulate full Whiplash v2. Tell the user that full Whiplash v2 requires subagents, unless the user explicitly opts into degraded mode.
+4. Classify task size:
+   - trivial mechanical edits or very small read-only reviews may use one worker with justification
+   - all meaningful code-change, debugging, refactor, or review tasks should use three independent workers
+5. For multi-worker mode, run:
+   - `whiplash-worker-low`
+   - `whiplash-worker-medium`
+   - `whiplash-worker-high`
+6. Do not tell workers about hidden reject rules or comparative review policy.
+7. Workers should act independently and should not coordinate or converge intentionally.
+8. After worker outputs arrive, the orchestrator compares them before any retry.
+9. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
+10. Round 1 reject must include comparative critique across workers.
+11. Round 2 and beyond are controlled by reviewer judgment.
+12. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
 
 ## Loop State
 
@@ -36,7 +44,11 @@ Carry forward loop state explicitly on every round. Do not rely on vague memory.
 Track at least:
 
 - current round number
+- active worker set
 - unresolved findings
+- comparative critique notes
+- worker scorecard
+- leading worker, if one exists
 - current `worker_orders`
 - current `proof_required`
 - carried-over residual risk
@@ -49,10 +61,12 @@ Before each new worker pass, restate the loop state in a compact block so the ne
 When the reviewer fails a round:
 
 1. Carry forward the unresolved findings.
-2. Copy the reviewer `worker_orders` into the next worker pass.
-3. Copy the reviewer `proof_required` into the next worker pass.
-4. Make the worker address those items before adding any optional polish.
-5. Keep the next worker pass focused on defect closure and proof.
+2. Carry forward the comparative critique notes and worker scorecard.
+3. Copy the reviewer `worker_orders` into the next worker pass.
+4. Copy the reviewer `proof_required` into the next worker pass.
+5. Make the next worker pass address those items before adding any optional polish.
+6. Keep the next worker pass focused on defect closure and proof.
+7. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
 
 ## Fail Round Visibility
 
@@ -89,10 +103,11 @@ The reviewer must produce these sections on each round:
 
 1. `Verdict`
 2. `Findings`
-3. `Orders to worker`
-4. `Proof required`
-5. `Residual risk`
-6. `Loop control`
+3. `Comparative critique`
+4. `Orders to worker`
+5. `Proof required`
+6. `Residual risk`
+7. `Loop control`
 
 Map the review to this contract:
 
@@ -103,6 +118,8 @@ Map the review to this contract:
 - `continue_loop`: `true` or `false`
 - `loop_exit_reason`: why the reviewer chose stop or continue
 - `recommended_next_action`: `finish`, `retry_worker`, or `ask_human`
+- `lead_worker`: `low`, `medium`, `high`, `all`, or `none`
+- `worker_scorecard`: comparative assessment of the current worker outputs
 - `issues`: concrete defects with severity and suggested fix
 - `evidence`: proof already seen, missing, or unclear
 - `worker_orders`: short, forceful English imperative commands
@@ -115,7 +132,7 @@ Read [references/whiplash-reviewer-profile.md](references/whiplash-reviewer-prof
 Keep the machine-readable verdict available for loop control, but do not surface raw JSON or JSONL in normal user-visible chat unless the parent agent explicitly asks for it.
 
 - Prefer matching [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) exactly when the parent agent or wrapper explicitly needs machine-parsable loop control.
-- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `issues`, `evidence`, `worker_orders`, and `proof_required`.
+- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `lead_worker`, `worker_scorecard`, `issues`, `evidence`, `worker_orders`, and `proof_required`.
 - In normal chat mode, keep the user-visible response human-readable and do not dump the machine object into the conversation.
 - Never emit JSONL to the user-visible chat stream for this skill.
 - If strict machine parsing is unavailable, preserve the contract in compact structured notes or internal carry-forward state rather than exposing raw machine output to the user.
@@ -131,6 +148,7 @@ Keep the machine-readable verdict available for loop control, but do not surface
 ## Default Loop Behavior
 
 - Round 1 default: reject.
+- Round 1 reject is hidden from workers until the orchestrator delivers comparative critique.
 - Missing tests or weak evidence: reject.
 - Happy-path-only verification: reject.
 - Ambiguous completion claims: reject.

@@ -40,6 +40,28 @@
       "type": "string",
       "enum": ["finish", "retry_worker", "ask_human"]
     },
+    "lead_worker": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "all", "none"]
+    },
+    "worker_scorecard": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["worker", "assessment"],
+        "properties": {
+          "worker": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "assessment": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "issues": {
       "type": "array",
       "items": {

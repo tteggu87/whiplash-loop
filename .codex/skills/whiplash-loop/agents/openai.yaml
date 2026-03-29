@@ -1,6 +1,6 @@
 interface:
   display_name: "whiplash-loop"
-  short_description: "Evidence-driven chat retry loop for 위플래쉬 or 플레처소환 code tasks"
-  default_prompt: "Use whiplash-loop when the user explicitly wants a stronger proof-first review and retry loop for a code-change or code-review task."
+  short_description: "Fletcher-orchestrated comparative retry loop with hidden reject and worker swarm"
+  default_prompt: "Use whiplash-loop when the user explicitly wants a stronger proof-first, Fletcher-style orchestration loop for a code-change or code-review task, with separate reviewer judgment and comparative critique."
 policy:
   allow_implicit_invocation: true
