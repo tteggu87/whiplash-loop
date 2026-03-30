@@ -5,8 +5,6 @@ description: Use when the user message includes "위플래쉬" or "플레처소�
 
 # Whiplash Loop
 
-When this skill activates, display the ASCII banner from [assets/banner.txt](assets/banner.txt) at the start of the response before any other output. If the file is unavailable, skip the banner silently.
-
 Use this skill only for code-change or review tasks triggered by `위플래쉬` or `플레처소환`.
 
 Do not use this loop for casual chat, simple Q&A, brainstorming, or read-only explanation requests.
