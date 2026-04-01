@@ -41,8 +41,9 @@ Worker subagents are the default, not an optional enhancement.
 15. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
 16. Round 1 reject must include comparative critique across workers.
 17. Only after the first comparative review may the orchestrator choose a `lead_worker`, role split, or focused retry strategy.
-18. Round 2 and beyond are controlled by reviewer judgment.
-19. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+18. After the first comparative review, the orchestrator may explicitly direct the next pass to preserve or combine specific worker strengths when that improves defect closure or proof quality.
+19. Round 2 and beyond are controlled by reviewer judgment.
+20. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
 
 ## Subagent Compliance Recovery
 
@@ -100,12 +101,13 @@ When the reviewer fails a round:
 2. Carry forward the comparative critique notes and worker scorecard.
 3. Copy the reviewer `worker_orders` into the next worker pass.
 4. Copy the reviewer `proof_required` into the next worker pass.
-5. Select the retry strategy for the current round using `Retry Strategy Rotation`.
-6. Make the next worker pass address those items before adding any optional polish.
-7. Keep the next worker pass focused on defect closure and proof.
-8. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
-9. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
-10. Role split or task split is allowed only after the first comparative review has established a reason to diverge.
+5. When useful, turn the comparative critique into explicit combination orders that name which worker strengths to preserve, combine, or discard in the next pass.
+6. Select the retry strategy for the current round using `Retry Strategy Rotation`.
+7. Make the next worker pass address those items before adding any optional polish.
+8. Keep the next worker pass focused on defect closure and proof.
+9. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
+10. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
+11. Role split or task split is allowed only after the first comparative review has established a reason to diverge.
 
 ## Verification Boundaries
 
