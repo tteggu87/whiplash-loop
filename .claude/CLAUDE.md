@@ -12,6 +12,10 @@ Use this file as the quick editing reference for Claude Code sessions working in
 
 - `.codex/skills/whiplash-loop/SKILL.md`
 - `.codex/agents/whiplash-reviewer.toml`
+- `.claude/agents/whiplash-reviewer.md`
+- `.claude/agents/whiplash-worker-low.md`
+- `.claude/agents/whiplash-worker-medium.md`
+- `.claude/agents/whiplash-worker-high.md`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-profile.md`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-verdict.schema.json`
 - `.codex/agents/whiplash-reviewer-verdict.schema.json`
@@ -19,12 +23,14 @@ Use this file as the quick editing reference for Claude Code sessions working in
 
 ## Current Expected Runtime Behavior
 
-- banner is shown on Whiplash activation
 - reviewer separation is mandatory for full v2
 - three workers are the default path
+- Claude worker mapping is `low -> haiku`, `medium -> sonnet`, `high -> opus`
+- Claude reviewer mapping defaults to `opus`
 - round 1 uses the same task for all workers
 - hidden reject belongs to the Fletcher reviewer, not the workers
 - comparative critique happens before specialization
+- after the first comparative review, the reviewer may explicitly direct the next pass to preserve or combine worker strengths
 - fail rounds surface verbatim `Orders to worker`
 
 ## When Editing Contracts
