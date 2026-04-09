@@ -9,6 +9,8 @@ Use this skill only for code-change or review tasks triggered by `위플래쉬` 
 
 Do not use this loop for casual chat, simple Q&A, brainstorming, or read-only explanation requests.
 
+When the skill activates in user-visible chat, show the banner from `assets/banner.txt` before other response content.
+
 ## Goal
 
 Run a Fletcher-orchestrated worker and reviewer loop that pushes for proof before acceptance.
@@ -44,6 +46,10 @@ Worker subagents are the default, not an optional enhancement.
 18. After the first comparative review, the orchestrator may explicitly direct the next pass to preserve or combine specific worker strengths when that improves defect closure or proof quality.
 19. Round 2 and beyond are controlled by reviewer judgment.
 20. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+21. If the reviewer fails a round and `continue_loop=true`, treat the Whiplash loop as still active across subsequent user turns until the reviewer passes, explicitly stops for human judgment, the user explicitly aborts the loop, or the loop reaches a terminal stop condition.
+22. Do not interpret a newer user implementation request, optimization request, or named execution skill as an automatic replacement for the active Whiplash loop while `continue_loop=true`. By default, reinterpret that new input as carry-forward material for the next Whiplash round.
+23. Resume before replace. At the start of any new turn, first check whether an active Whiplash loop already exists and should be resumed before starting any new top-level workflow.
+24. If `continue_loop=true`, starting a new top-level workflow or closing the Whiplash reviewer/workers before a terminal stop condition is a protocol violation unless the user explicitly says to stop Whiplash.
 
 ## Subagent Compliance Recovery
 
@@ -79,8 +85,72 @@ Track at least:
 - prevention note, if one exists
 - carried-over residual risk
 - latest `continue_loop` decision
+- active workflow owner
+- pending user instructions that arrived after the most recent reviewer verdict
+- nested execution skill, if one is being used inside the current retry
+- state artifact path
+- reviewer agent id
+- worker agent ids
+- terminal stop condition, if one has been reached
 
 Before each new worker pass, restate the loop state in a compact block so the next pass knows exactly what is still open.
+
+Persist the active loop state in a compact artifact whenever Whiplash starts, when the reviewer returns a verdict, and before any cross-turn handoff.
+
+Default artifact path:
+
+- `.codex/context/whiplash-state.json`
+
+Minimum artifact fields:
+
+- `active`
+- `round`
+- `continue_loop`
+- `recommended_next_action`
+- `reviewer_summary`
+- `worker_orders`
+- `proof_required`
+- `lead_worker`
+- `reviewer_agent_id`
+- `worker_agent_ids`
+- `nested_skill`
+- `pending_user_inputs`
+- `terminal_stop_reason`
+
+If the file is missing, reconstruct the loop state from the latest reviewer verdict before taking any destructive action such as closing agents or starting a new top-level workflow.
+
+## Resume-First Procedure
+
+At the beginning of every new user turn after Whiplash has been activated in the conversation:
+
+1. Check whether the active loop state artifact exists.
+2. If it exists and `active=true` and `continue_loop=true`, resume that loop first.
+3. If it is missing, inspect the latest reviewer verdict and recover the loop state before deciding whether the loop is still active.
+4. Only start a brand-new top-level workflow when:
+   - the recovered loop is inactive, or
+   - the reviewer reached a terminal stop, or
+   - the user explicitly says to stop or replace Whiplash.
+5. If recovery is ambiguous, say so briefly and bias toward preserving the active loop rather than replacing it.
+
+## Queued User Instructions
+
+When a new user message arrives after a reviewer fail and before the next worker pass:
+
+1. If the user explicitly says to stop, cancel, end Whiplash, or switch out of the loop, stop the loop.
+2. Otherwise, if `continue_loop=true`, treat the new message as queued input for the active loop, not as an automatic workflow replacement.
+3. Merge the new instruction into the next worker pass when it narrows scope, chooses a retry direction, requests a tool or skill, or adds proof requirements.
+4. If the new instruction conflicts with the current reviewer orders, preserve the reviewer defect-closure goals and reinterpret the user instruction as a strategy choice for satisfying them unless the user explicitly overrides the reviewer.
+5. Surface this interpretation briefly in chat so the user can correct it, but do not silently terminate the loop.
+6. Append the new instruction to the loop state artifact as pending carry-forward input before launching the next pass.
+
+Examples:
+
+- User says `[$autoresearch-codex] ... 최적화해줘` after a fail verdict:
+  Treat `autoresearch-codex` as the execution strategy for the next Whiplash round, then return the results to the reviewer.
+- User says `continue` after a fail verdict:
+  Reuse the current reviewer orders and launch the next worker pass without restarting discovery.
+- User says `위플래쉬 종료하고 그냥 커밋해`:
+  Exit the loop because the user explicitly aborted it.
 
 ## Retry Strategy Rotation
 
@@ -108,6 +178,19 @@ When the reviewer fails a round:
 9. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
 10. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
 11. Role split or task split is allowed only after the first comparative review has established a reason to diverge.
+
+## Nested Skill Usage
+
+The parent loop may use another skill as an execution tactic inside an active Whiplash retry, but that does not end the Whiplash loop by itself.
+
+Rules:
+
+1. If the user names another implementation or optimization skill while Whiplash is active, prefer treating that skill as the next-round worker strategy.
+2. Run the nested skill to produce code changes, measurements, or evidence, then send the resulting evidence back to the reviewer for the next Whiplash verdict.
+3. Do not close the reviewer or declare the loop finished just because a nested skill completed one execution pass.
+4. Only close Whiplash subagents when the loop reaches a terminal condition: reviewer pass, reviewer stop for human judgment, explicit user abort, or non-converging terminal stop.
+5. If the nested skill itself wants to start a new top-level loop, suppress that escalation and keep Whiplash as the top-level controller unless the user explicitly requests a handoff.
+6. Record the nested skill name in the loop state artifact and clear it only after the reviewer has consumed the resulting evidence.
 
 ## Verification Boundaries
 
@@ -243,6 +326,12 @@ This signal does not change the retry loop by itself. It exists so the parent ag
 - Ambiguous completion claims: reject.
 - Non-converging retries: stop early and ask for human judgment.
 - Clear blocker or external dependency: stop and ask for human judgment.
+- Reviewer fail plus `continue_loop=true`: keep the Whiplash loop active across turns by default.
+- New user execution requests during an active fail round: queue them into the next round unless the user explicitly aborts or replaces Whiplash.
+- Do not close reviewer or worker agents immediately after a fail verdict unless a terminal stop condition is already satisfied.
+- Resume-first is mandatory. Check for an active Whiplash state before starting any new top-level workflow.
+- Closing an active Whiplash loop while `continue_loop=true` and no terminal stop condition exists is a protocol violation.
+- Nested skills do not own the top level. They report back into Whiplash until the reviewer terminates the loop.
 
 ## Final Answer Rule
 
@@ -251,3 +340,5 @@ Do not present the task as complete until the reviewer passes it or explicitly s
 If the loop is still in a fail round, show the `Orders to worker` block before any higher-level summary.
 
 Before any retry actions, surface the reviewer orders verbatim.
+
+If a new user instruction arrives during an active fail round, explain that it will be applied inside the next Whiplash round unless the user explicitly stops the loop.

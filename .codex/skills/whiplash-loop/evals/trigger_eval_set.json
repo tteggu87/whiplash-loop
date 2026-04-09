@@ -1,0 +1,66 @@
+[
+  {
+    "query": "위플래쉬 로그인 폼 리팩터했는데 제출 버튼이 간헐적으로 죽는다. 회귀까지 같이 잡아.",
+    "should_trigger": true
+  },
+  {
+    "query": "플레처소환 이 PR 리뷰해. happy path 말고 실패 경로 증거까지 요구해.",
+    "should_trigger": true
+  },
+  {
+    "query": "위플래쉬 fail 난 라운드 이어서 continue. 방금 얻은 측정 결과를 다음 round proof로 반영해.",
+    "should_trigger": true
+  },
+  {
+    "query": "플레처소환 round 2부터는 direct fix로 가고 reviewer랑 worker 셋은 유지해.",
+    "should_trigger": true
+  },
+  {
+    "query": "위플래쉬 worker 하나가 메타 불평만 한다. 같은 과제로 한 번 더 날카롭게 재소환해.",
+    "should_trigger": true
+  },
+  {
+    "query": "플레처소환 git 없는 폴더에서 한 파일만 고치고 hash 같은 비-git 증거로 검증해.",
+    "should_trigger": true
+  },
+  {
+    "query": "위플래쉬 fail 이후 [$autoresearch-codex] 로 최적화해. 새 top-level로 갈아타지 말고 다음 round 전략으로 써.",
+    "should_trigger": true
+  },
+  {
+    "query": "플레처소환 active state artifact가 없으면 latest reviewer verdict 기준으로 loop state를 복구해.",
+    "should_trigger": true
+  },
+  {
+    "query": "위플래쉬가 뭔지 구현 없이 개념만 설명해줘.",
+    "should_trigger": false
+  },
+  {
+    "query": "로그인 폼 버그 고쳐줘. 회귀도 좀 봐줘.",
+    "should_trigger": false
+  },
+  {
+    "query": "이 PR 간단 리뷰만 해줘. 위플래쉬는 쓰지 말고 짧게만.",
+    "should_trigger": false
+  },
+  {
+    "query": "플레처소환 없이 정상 리뷰로만 처리해.",
+    "should_trigger": false
+  },
+  {
+    "query": "위플래쉬 종료하고 그냥 커밋해.",
+    "should_trigger": false
+  },
+  {
+    "query": "proof-first orchestration loop가 뭔지 비교 설명해줘.",
+    "should_trigger": false
+  },
+  {
+    "query": "테스트 깨진 거 찾아서 고쳐줘. 위플래쉬 말고 그냥 일반적으로.",
+    "should_trigger": false
+  },
+  {
+    "query": "플레처소환이라는 단어가 재밌네. 영화 얘기나 해줘.",
+    "should_trigger": false
+  }
+]

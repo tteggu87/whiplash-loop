@@ -110,6 +110,8 @@ flowchart TD
 - Round 1 is always the same task to all workers. Early topic split is not part of the design.
 - Worker or reviewer noncompliance is retried once before the loop accepts that failure mode as real.
 - On fail rounds, `Orders to worker` should be shown verbatim before any higher-level explanation.
+- Active fail rounds should persist through `.codex/context/whiplash-state.json` so the next user turn resumes the same loop before any new top-level workflow starts.
+- New execution requests that arrive during an active fail round should be queued into the next Whiplash round unless the user explicitly stops or replaces Whiplash.
 - Outside Git repositories, verification should rely on file contents, hashes, byte checks, listings, or targeted command output rather than failing `git diff` as core evidence.
 - Retry strategy rotates across rounds: direct fix, structural change, reset approach, then last chance.
 - Evidence must cover build-or-equivalent output, changed behavior, at least one failure path, and no-regression confidence.
