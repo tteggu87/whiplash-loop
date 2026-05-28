@@ -24,6 +24,7 @@
 - uses non-git verification evidence when the task runs outside a Git repository
 - rotates retry strategy across rounds instead of repeating the same failed move
 - tracks recurrence plus a prevention note for defect classes that keep returning
+- exposes `premature_review` and `round_consumed=false` so wrappers do not advance rounds on incomplete worker sets
 - supports structured verdict data for internal loop control
 
 ## Main Files
@@ -123,6 +124,7 @@ flowchart TD
 - Worker or reviewer noncompliance is retried once before the loop accepts that failure mode as real.
 - High-reasoning agents such as `whiplash-worker-high` and `whiplash-reviewer` should get at least a 10-minute `wait_agent` window before they are treated as stalled.
 - A plain `wait_agent` timeout means "still waiting," not "worker failed."
+- Machine-readable premature reviews should use `decision=premature_review`, `premature_review=true`, and `round_consumed=false`; wrappers must not advance the round counter or spend the hidden reject when `round_consumed=false`.
 - On fail rounds, `Orders to worker` should be shown verbatim before any higher-level explanation.
 - Active fail rounds should persist through `.codex/context/whiplash-state.json` so the next user turn resumes the same loop before any new top-level workflow starts.
 - New execution requests that arrive during an active fail round should be queued into the next Whiplash round unless the user explicitly stops or replaces Whiplash.

@@ -16,13 +16,15 @@
     "evidence",
     "worker_orders",
     "proof_required",
+    "premature_review",
+    "round_consumed",
     "recurrence",
     "prevention_note"
   ],
   "properties": {
     "decision": {
       "type": "string",
-      "enum": ["pass", "fail"]
+      "enum": ["pass", "fail", "premature_review"]
     },
     "summary": {
       "type": "string",
@@ -130,6 +132,14 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "premature_review": {
+      "type": "boolean",
+      "description": "True when the reviewer was invoked before the expected worker set was complete. Premature reviews must not consume the round."
+    },
+    "round_consumed": {
+      "type": "boolean",
+      "description": "False when the reviewer response is premature or otherwise invalid for advancing the Whiplash round counter."
     },
     "recurrence": {
       "type": "boolean",

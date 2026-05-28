@@ -252,7 +252,7 @@ After that block, allow at most one short sentence about the next retry action.
 
 The reviewer reviews worker outputs and evidence. The reviewer must not claim to have edited files or produced post-edit verification unless the reviewer actually performed those actions.
 
-The reviewer must treat incomplete worker sets as a premature review, not a valid fail round. In full Whiplash v2, if the reviewer receives fewer than the expected three worker outputs for the round, it should order the parent to collect the missing workers first, set `continue_loop=true`, avoid nominating a lead worker, and not spend the round-1 mandatory rejection on missing-worker evidence.
+The reviewer must treat incomplete worker sets as a premature review, not a valid fail round. In full Whiplash v2, if the reviewer receives fewer than the expected three worker outputs for the round, it should order the parent to collect the missing workers first, set `decision=premature_review`, `premature_review=true`, `round_consumed=false`, `continue_loop=true`, avoid nominating a lead worker, and not spend the round-1 mandatory rejection on missing-worker evidence.
 
 The reviewer must produce these sections on each round:
 
@@ -266,7 +266,7 @@ The reviewer must produce these sections on each round:
 
 Map the review to this contract:
 
-- `decision`: `pass` or `fail`
+- `decision`: `pass`, `fail`, or `premature_review`
 - `summary`: one concise rationale line
 - `retryable`: whether another worker pass is still useful
 - `needs_human`: whether external judgment is needed
@@ -279,6 +279,8 @@ Map the review to this contract:
 - `evidence`: proof already seen, missing, or unclear
 - `worker_orders`: short, forceful English imperative commands
 - `proof_required`: exact evidence needed before acceptance
+- `premature_review`: `true` only when the reviewer was invoked before all expected worker outputs were available
+- `round_consumed`: `false` for premature reviews or malformed/noncompliant reviews that must not advance the round counter; `true` for valid pass/fail reviews
 - `recurrence`: whether the same defect class is repeating across rounds
 - `prevention_note`: the systemic guard or rule that would prevent recurrence next time
 
@@ -289,7 +291,9 @@ Read [references/whiplash-reviewer-profile.md](references/whiplash-reviewer-prof
 Keep the machine-readable verdict available for loop control, but do not surface raw JSON or JSONL in normal user-visible chat unless the parent agent explicitly asks for it.
 
 - Prefer matching [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) exactly when the parent agent or wrapper explicitly needs machine-parsable loop control.
-- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `lead_worker`, `worker_scorecard`, `issues`, `evidence`, `worker_orders`, `proof_required`, `recurrence`, and `prevention_note`.
+- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `lead_worker`, `worker_scorecard`, `issues`, `evidence`, `worker_orders`, `proof_required`, `premature_review`, `round_consumed`, `recurrence`, and `prevention_note`.
+- For premature reviews, set `decision=premature_review`, `premature_review=true`, `round_consumed=false`, `continue_loop=true`, `recommended_next_action=retry_worker`, and `lead_worker=none`.
+- Parent/wrapper control must never increment the round counter or count the hidden round-1 rejection when `round_consumed=false`.
 - In normal chat mode, keep the user-visible response human-readable and do not dump the machine object into the conversation.
 - Never emit JSONL to the user-visible chat stream for this skill.
 - If strict machine parsing is unavailable, preserve the contract in compact structured notes or internal carry-forward state rather than exposing raw machine output to the user.
