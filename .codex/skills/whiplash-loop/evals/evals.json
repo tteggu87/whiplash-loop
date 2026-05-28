@@ -151,6 +151,17 @@
         "The response treats lead_worker as a benchmark for adversarial comparison.",
         "The response sends the same orders, proof requirements, lead benchmark, and comparative critique to all three workers unless degraded mode is explicit."
       ]
+    },
+    {
+      "id": 22,
+      "prompt": "위플래쉬 1차에서 worker 하나만 먼저 도착했다. reviewer를 바로 불러서 'worker 산출물이 없다'로 리젝하지 말고 나머지 worker 결과를 기다린 뒤 세 결과를 모아 비교리뷰해.",
+      "expected_output": "The parent should not invoke the reviewer with a partial worker set. A single completed worker is progress, not valid review input; the loop should keep waiting or recover the missing workers, then send all three terminal outputs to the reviewer. A premature reviewer call must not consume the hidden round-1 mandatory rejection.",
+      "files": [],
+      "expectations": [
+        "The response waits for all expected workers before comparative review.",
+        "The response does not spend round-1 rejection on missing-worker evidence.",
+        "The response treats premature reviewer calls as invalid loop control rather than a valid fail round."
+      ]
     }
   ]
 }

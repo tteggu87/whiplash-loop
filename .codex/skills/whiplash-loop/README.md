@@ -11,6 +11,7 @@
 - hides the round-1 mandatory reject from workers
 - runs a default 3-worker swarm (`low`, `medium`, `high`)
 - gives the same initial task to all three workers in round 1
+- waits for all expected worker outputs before invoking the reviewer
 - compares worker outputs before retrying
 - treats `lead_worker` as a provisional benchmark, not a sole next executor
 - sends fail-round retry orders back to all three workers by default, using the lead benchmark to pressure stronger proof, corrections, or rebuttals
@@ -80,12 +81,13 @@ flowchart TD
     J -->|No| M1["Respawn once with sharper solve-the-task order"]
     K -->|No| M2["Respawn once with sharper solve-the-task order"]
     L -->|No| M3["Respawn once with sharper solve-the-task order"]
-    J -->|Yes| N["Comparative review"]
-    K -->|Yes| N
-    L -->|Yes| N
-    M1 --> N
-    M2 --> N
-    M3 --> N
+    J -->|Yes| AW["All expected worker outputs terminal"]
+    K -->|Yes| AW
+    L -->|Yes| AW
+    M1 --> AW
+    M2 --> AW
+    M3 --> AW
+    AW --> N["Comparative review"]
     N --> RC{"Round 1?"}
     RC -->|Yes| O["Hidden round-1 reject"]
     RC -->|No| Z{"Pass / fail / ask human?"}
@@ -116,6 +118,7 @@ flowchart TD
 - Activation currently includes the PR2-style banner before the loop begins.
 - Full Whiplash v2 requires reviewer separation and the full 3-worker swarm. If either is unavailable, the loop should stop and ask for degraded mode instead of silently collapsing.
 - Round 1 is always the same task to all workers. Early topic split is not part of the design.
+- The reviewer must not be invoked while only a partial worker set has returned. A one-worker result is not enough to spend the hidden round-1 reject.
 - After a fail verdict, the next pass still goes to all three workers by default. The lead worker is only the strongest provisional benchmark used to pressure the lead for more proof and the other workers for missed issues, disagreements, or stronger rebuttals.
 - Worker or reviewer noncompliance is retried once before the loop accepts that failure mode as real.
 - High-reasoning agents such as `whiplash-worker-high` and `whiplash-reviewer` should get at least a 10-minute `wait_agent` window before they are treated as stalled.

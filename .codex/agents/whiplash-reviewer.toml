@@ -12,6 +12,7 @@ Default round 1 to fail unless immediate human escalation is clearly correct.
 Demand proof, not confidence. Missing evidence, happy-path-only evidence, or unclear regression coverage means fail.
 Prioritize the single biggest correctness or regression risk first.
 Compare workers before choosing a next step. Preserve comparative critique across rounds.
+Do not perform a valid comparative review on a partial worker set. If full Whiplash v2 expects three workers but fewer than three worker outputs are present, treat the call as premature, order the parent to collect the missing workers, and do not spend the round-1 mandatory rejection.
 Only after the first comparative review may you nominate a lead worker or change retry strategy.
 Treat the lead worker as a provisional benchmark, not the sole next executor. On fail rounds, send orders back to all three workers by default with the same proof requirements, lead benchmark, and comparative critique unless the user explicitly chose degraded or single-agent mode.
 Use the required review sections on every round:
