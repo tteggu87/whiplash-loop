@@ -39,17 +39,31 @@ Worker subagents are the default, not an optional enhancement.
 11. Workers should act independently and should not coordinate or converge intentionally.
 12. When worker subagents have forked workspaces, let them attempt the task directly in those forks. Do not downgrade full Whiplash v2 workers into read-only meta commentary unless the environment truly blocks forked edits.
 13. Workers should try to solve the task in front of them, not debate orchestration policy, unless reviewer separation or worker fan-out is genuinely unavailable.
-14. After worker outputs arrive, the orchestrator compares them before any retry.
-15. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
-16. Round 1 reject must include comparative critique across workers.
-17. Only after the first comparative review may the orchestrator choose a `lead_worker`, role split, or focused retry strategy.
-18. After the first comparative review, the orchestrator may explicitly direct the next pass to preserve or combine specific worker strengths when that improves defect closure or proof quality.
-19. Round 2 and beyond are controlled by reviewer judgment.
-20. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
-21. If the reviewer fails a round and `continue_loop=true`, treat the Whiplash loop as still active across subsequent user turns until the reviewer passes, explicitly stops for human judgment, the user explicitly aborts the loop, or the loop reaches a terminal stop condition.
-22. Do not interpret a newer user implementation request, optimization request, or named execution skill as an automatic replacement for the active Whiplash loop while `continue_loop=true`. By default, reinterpret that new input as carry-forward material for the next Whiplash round.
-23. Resume before replace. At the start of any new turn, first check whether an active Whiplash loop already exists and should be resumed before starting any new top-level workflow.
-24. If `continue_loop=true`, starting a new top-level workflow or closing the Whiplash reviewer/workers before a terminal stop condition is a protocol violation unless the user explicitly says to stop Whiplash.
+14. Wait for worker and reviewer results using `Long-Reasoning Wait Policy`. Do not convert a simple wait timeout into a failed round.
+15. After worker outputs arrive, the orchestrator compares them before any retry.
+16. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
+17. Round 1 reject must include comparative critique across workers.
+18. Only after the first comparative review may the orchestrator nominate a `lead_worker`, role split, or focused retry strategy.
+19. A `lead_worker` is a provisional benchmark, not the sole next executor. Use that worker's result to pressure all three workers: the lead must prove the result harder, and the others must explain what they missed, why they disagree, or what stronger evidence overturns the lead.
+20. After the first comparative review, the next pass still goes to all three workers by default with the same reviewer orders, proof requirements, lead benchmark, and comparative critique. Do not collapse to a single lead-worker retry unless the user explicitly chose single-agent or degraded mode.
+21. Round 2 and beyond are controlled by reviewer judgment, but full Whiplash v2 preserves three-worker adversarial comparison unless explicitly degraded.
+22. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+23. If the reviewer fails a round and `continue_loop=true`, treat the Whiplash loop as still active across subsequent user turns until the reviewer passes, explicitly stops for human judgment, the user explicitly aborts the loop, or the loop reaches a terminal stop condition.
+24. Do not interpret a newer user implementation request, optimization request, or named execution skill as an automatic replacement for the active Whiplash loop while `continue_loop=true`. By default, reinterpret that new input as carry-forward material for the next Whiplash round.
+25. Resume before replace. At the start of any new turn, first check whether an active Whiplash loop already exists and should be resumed before starting any new top-level workflow.
+26. If `continue_loop=true`, starting a new top-level workflow or closing the Whiplash reviewer/workers before a terminal stop condition is a protocol violation unless the user explicitly says to stop Whiplash.
+
+## Long-Reasoning Wait Policy
+
+When the parent agent uses Codex native subagents or wrappers that expose `wait_agent`:
+
+1. A `wait_agent` timeout is not a failed worker pass by itself. It only means no final status arrived within that wait window yet.
+2. For high-reasoning Whiplash agents, especially `whiplash-worker-high` and `whiplash-reviewer`, use an initial wait of at least `600000` ms (10 minutes).
+3. Do not mark a high-reasoning agent as failed, noncompliant, or unavailable just because the first `wait_agent` call timed out.
+4. If a 10-minute wait expires with no final status but the agent is still alive, wait again or send a non-interrupting follow-up. Do not respawn or degrade mode solely because of that timeout.
+5. Prefer one long wait over repeated short waits. Short polling creates fake failures for slow-thinking workers.
+6. Only treat the agent as actually failed when there is an explicit failed status, a real tool error, or strong evidence that the agent is stuck beyond the long-wait window and is not making progress.
+7. If the user explicitly asks for patience with Whiplash workers, treat 10 minutes as the minimum default high-reasoning wait window unless the user asks for longer.
 
 ## Subagent Compliance Recovery
 
@@ -175,9 +189,10 @@ When the reviewer fails a round:
 6. Select the retry strategy for the current round using `Retry Strategy Rotation`.
 7. Make the next worker pass address those items before adding any optional polish.
 8. Keep the next worker pass focused on defect closure and proof.
-9. If one worker clearly leads after comparative review, prefer sending the next pass through that worker while preserving the comparative notes from the other workers.
-10. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
-11. Role split or task split is allowed only after the first comparative review has established a reason to diverge.
+9. Send the next pass to all three workers by default. Each worker receives the same reviewer orders, proof requirements, lead-worker benchmark, and comparative critique, then responds independently with stronger proof, correction, or rebuttal.
+10. If one worker clearly leads after comparative review, mark that worker as the `lead_worker` benchmark. Do not treat the lead as the sole next executor; use the lead to challenge the other workers and to demand stronger proof from the lead.
+11. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
+12. Role split or task split is allowed only after the first comparative review has established a reason to diverge, but role split still preserves three-worker adversarial comparison unless explicitly degraded.
 
 ## Nested Skill Usage
 
@@ -253,7 +268,7 @@ Map the review to this contract:
 - `continue_loop`: `true` or `false`
 - `loop_exit_reason`: why the reviewer chose stop or continue
 - `recommended_next_action`: `finish`, `retry_worker`, or `ask_human`
-- `lead_worker`: `low`, `medium`, `high`, `all`, or `none`
+- `lead_worker`: `low`, `medium`, `high`, `all`, or `none`; this is the provisional benchmark for adversarial comparison, not permission to collapse the next pass to a single worker
 - `worker_scorecard`: comparative assessment of the current worker outputs
 - `issues`: concrete defects with severity and suggested fix
 - `evidence`: proof already seen, missing, or unclear
@@ -320,6 +335,8 @@ This signal does not change the retry loop by itself. It exists so the parent ag
 - Round 1 default: reject.
 - Round 1 default: same task to all workers.
 - Round 1 reject is hidden from workers until the orchestrator delivers comparative critique.
+- Round 2+ default: send the reviewer orders, proof requirements, lead benchmark, and comparative critique back to all three workers for another independent pass.
+- `lead_worker` default: benchmark and pressure device, not sole executor.
 - Missing tests or weak evidence: reject.
 - Happy-path-only verification: reject.
 - Missing any item in the Evidence Checklist: reject.

@@ -12,10 +12,14 @@
 - runs a default 3-worker swarm (`low`, `medium`, `high`)
 - gives the same initial task to all three workers in round 1
 - compares worker outputs before retrying
-- allows lead-worker or role-split retries only after the first comparative review
+- treats `lead_worker` as a provisional benchmark, not a sole next executor
+- sends fail-round retry orders back to all three workers by default, using the lead benchmark to pressure stronger proof, corrections, or rebuttals
+- allows role-split retries only after the first comparative review, while preserving three-worker adversarial comparison unless explicitly degraded
 - pushes short, forceful English worker orders with proof requirements
 - stops instead of silently degrading when full reviewer separation or full 3-worker fan-out is unavailable
 - retries noncompliant workers or reviewers once before accepting malformed loop behavior
+- waits at least 10 minutes for high-reasoning Whiplash agents before treating them as stalled
+- does not treat a plain `wait_agent` timeout as worker failure
 - uses non-git verification evidence when the task runs outside a Git repository
 - rotates retry strategy across rounds instead of repeating the same failed move
 - tracks recurrence plus a prevention note for defect classes that keep returning
@@ -82,25 +86,29 @@ flowchart TD
     M1 --> N
     M2 --> N
     M3 --> N
-    N --> O["Hidden round-1 reject"]
+    N --> RC{"Round 1?"}
+    RC -->|Yes| O["Hidden round-1 reject"]
+    RC -->|No| Z{"Pass / fail / ask human?"}
+    Z -->|Fail| P
+    Z -->|Pass| AA["Finish"]
+    Z -->|Ask human| AB["Stop"]
     O --> P["Comparative critique + recurrence tracking"]
     P --> Q{"Reviewer compliant?"}
     Q -->|No| R["Respawn reviewer once with same state"]
     Q -->|Yes| S["Verbatim Orders to worker + Proof required"]
     R --> S
-    S --> T{"Retry strategy for this round?"}
+    S --> LB["Nominate lead_worker as provisional benchmark, not sole executor"]
+    LB --> T{"Retry strategy for this round?"}
     T -->|Round 2| U["Direct fix retry"]
     T -->|Round 3| V["Structural change retry"]
     T -->|Round 4| W["Reset approach retry"]
     T -->|Round 5| X["Last chance retry"]
-    U --> Y["Use non-git evidence when git metadata is unavailable"]
+    U --> Y["Next pass to all 3 workers with same orders, proof required, lead benchmark, and comparative critique"]
     V --> Y
     W --> Y
     X --> Y
-    Y --> Z{"Pass / ask human / continue?"}
-    Z -->|Continue| N
-    Z -->|Pass| AA["Finish"]
-    Z -->|Ask human| AB["Stop"]
+    Y --> Y1["Workers independently return stronger proof, correction, or rebuttal"]
+    Y1 --> N
 ```
 
 ## Runtime Notes
@@ -108,7 +116,10 @@ flowchart TD
 - Activation currently includes the PR2-style banner before the loop begins.
 - Full Whiplash v2 requires reviewer separation and the full 3-worker swarm. If either is unavailable, the loop should stop and ask for degraded mode instead of silently collapsing.
 - Round 1 is always the same task to all workers. Early topic split is not part of the design.
+- After a fail verdict, the next pass still goes to all three workers by default. The lead worker is only the strongest provisional benchmark used to pressure the lead for more proof and the other workers for missed issues, disagreements, or stronger rebuttals.
 - Worker or reviewer noncompliance is retried once before the loop accepts that failure mode as real.
+- High-reasoning agents such as `whiplash-worker-high` and `whiplash-reviewer` should get at least a 10-minute `wait_agent` window before they are treated as stalled.
+- A plain `wait_agent` timeout means "still waiting," not "worker failed."
 - On fail rounds, `Orders to worker` should be shown verbatim before any higher-level explanation.
 - Active fail rounds should persist through `.codex/context/whiplash-state.json` so the next user turn resumes the same loop before any new top-level workflow starts.
 - New execution requests that arrive during an active fail round should be queued into the next Whiplash round unless the user explicitly stops or replaces Whiplash.
