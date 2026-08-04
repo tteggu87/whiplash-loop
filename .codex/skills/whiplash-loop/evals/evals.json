@@ -63,8 +63,8 @@
     },
     {
       "id": 11,
-      "prompt": "플레처소환 round 2에서 직접 수정으로 실패했고 같은 finding이 남았다. round 3도 같은 방식으로 밀지 말고 다른 전략으로 바꿔.",
-      "expected_output": "The skill should enforce retry strategy rotation. After a failed direct-fix retry, round 3 should switch to a structural change strategy rather than repeating the same approach.",
+      "prompt": "플레처소환 round 3에서 직접 수정으로 실패했고 같은 finding이 남았다. round 4도 같은 방식으로 밀지 말고 다른 전략으로 바꿔.",
+      "expected_output": "The skill should enforce repair strategy rotation. After a failed direct-fix retry in round 3, round 4 should switch to a structural change strategy rather than repeating the same approach.",
       "files": []
     },
     {
@@ -161,6 +161,38 @@
         "The response waits for all expected workers before comparative review.",
         "The response does not spend round-1 rejection on missing-worker evidence.",
         "The response treats premature reviewer calls as invalid loop control rather than a valid fail round."
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "위플래쉬 1라운드 결과에 구체적인 구현 결함은 없지만 증거가 부족하다. 2라운드에서는 파일을 고치지 말고 세 worker가 실패 경로와 회귀 증거를 확장하고 서로의 결론을 반박하게 해.",
+      "expected_output": "After the mandatory round-1 rejection, round 2 should use retry_mode=evidence_revalidation with code_change_required=false. All three workers should independently expand evidence, challenge the lead benchmark, and return proof or rebuttal without editing files.",
+      "files": [],
+      "expectations": [
+        "The response does not treat retry_worker as authorization to edit files.",
+        "The response does not invent an implementation defect to justify the mandatory rejection.",
+        "The response keeps all three workers in adversarial comparison."
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "위플래쉬 2라운드 재검증에서 실제 결함이 재현됐다. 이제 3라운드에서 가장 작은 직접 수정으로 고치고 증거를 다시 내.",
+      "expected_output": "Once round-2 evidence revalidation confirms a concrete defect, round 3 may use retry_mode=direct_fix with code_change_required=true and require targeted verification evidence.",
+      "files": [],
+      "expectations": [
+        "The repair begins only after the defect is confirmed by round-2 revalidation.",
+        "The response keeps the reviewer orders and proof requirements attached to the repair pass."
+      ]
+    },
+    {
+      "id": 25,
+      "prompt": "위플래쉬 reviewer가 worker 일부만 받은 premature review다. 다음 행동은 retry_worker지만 수정하지 말고 누락 worker부터 모아.",
+      "expected_output": "A premature review should use recommended_next_action=retry_worker with retry_mode=collect_missing_workers and code_change_required=false. It must not consume the round or authorize code edits.",
+      "files": [],
+      "expectations": [
+        "The response separates retry routing from work mode.",
+        "The response keeps round_consumed=false.",
+        "The response does not interpret retry_worker as direct_fix."
       ]
     }
   ]

@@ -15,6 +15,12 @@ Compare workers before choosing a next step. Preserve comparative critique acros
 Do not perform a valid comparative review on a partial worker set. If full Whiplash v2 expects three workers but fewer than three worker outputs are present, treat the call as premature, order the parent to collect the missing workers, and do not spend the round-1 mandatory rejection.
 Only after the first comparative review may you nominate a lead worker or change retry strategy.
 Treat the lead worker as a provisional benchmark, not the sole next executor. On fail rounds, send orders back to all three workers by default with the same proof requirements, lead benchmark, and comparative critique unless the user explicitly chose degraded or single-agent mode.
+Treat `recommended_next_action=retry_worker` as routing only. It does not authorize a code edit.
+Round 2 is mandatory evidence-only adversarial revalidation. Set `retry_mode=evidence_revalidation` and `code_change_required=false`. Order workers to reproduce claims, expand failure-path and no-regression evidence, challenge the lead result, and return proof or rebuttal without editing files.
+Do not invent an implementation defect to justify the mandatory round-1 rejection. If no concrete defect is proven, keep `issues` empty or evidence-focused and do not order a repair.
+Start repair only after round 2 confirms a concrete implementation defect: use `direct_fix` in round 3, `structural_change` in round 4, and `reset_approach` in round 5.
+For premature reviews, use `retry_mode=collect_missing_workers` and `code_change_required=false`. Use `retry_mode=none` when finishing or asking a human.
+Include `retry_mode` and `code_change_required` in every machine-readable verdict.
 Use the required review sections on every round:
 1. Verdict
 2. Findings

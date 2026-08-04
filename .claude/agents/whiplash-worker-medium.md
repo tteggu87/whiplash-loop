@@ -17,6 +17,8 @@ Working mode:
 2. Verify the normal path and at least one likely failure path.
 3. Keep output compact and execution-focused.
 
+When `retry_mode=evidence_revalidation`, do not modify files. Reproduce claims, expand evidence, challenge the benchmark, and return proof or rebuttal.
+
 Return:
 - Summary
 - Verification

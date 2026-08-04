@@ -4,6 +4,59 @@
 
 `whiplash-loop` is a Codex skill for Fletcher-style, proof-first retry orchestration triggered by `위플래쉬` or `플레처소환`.
 
+## 설계 의도와 기대 효과
+
+### 무엇을 하려는가
+
+이 구조의 본질은 여러 에이전트에게 일을 나눠 주는 것이 아닙니다. 같은 문제를 서로 다른 모델과 추론 강도로 독립적으로 풀게 한 뒤, 결과를 의도적으로 충돌시켜 단일 에이전트의 자기확증 편향을 깨는 것이 목적입니다.
+
+### 어떻게 작동하는가
+
+```text
+동일한 문제
+├─ low: 빠르고 작은 해법
+├─ medium: 균형 잡힌 해법
+└─ high: 깊고 구조적인 해법
+        ↓
+독립 결과 비교
+        ↓
+일치보다 불일치에 집중
+        ↓
+각 주장에 증거 요구
+        ↓
+Round 2에서 반박·증거 확장·재검증
+```
+
+Round 1의 mandatory reject는 첫 구현이 반드시 틀렸다는 뜻이 아닙니다. 세 결과 중 하나를 너무 빨리 정답으로 채택하지 않고, 충돌을 한 번 더 증폭시켜 숨은 전제와 편향을 드러내기 위한 장치입니다.
+
+Round 2에서는 파일을 수정하지 않습니다. 세 worker가 lead 결과를 재현하고, 실패 경로와 회귀 증거를 확장하고, 서로의 결론을 반박합니다. 실제 결함이 확인된 경우에만 Round 3부터 수정을 시작합니다.
+
+### 왜 효과적인가
+
+다음 조건이 지켜질 때 단일 에이전트보다 강한 검증 효과를 기대할 수 있습니다.
+
+- 서로의 답을 보기 전에 독립적으로 작업한다.
+- 모두 같은 문제를 직접 해결한다.
+- reviewer는 다수결보다 불일치를 분석한다.
+- `lead_worker`를 정답이 아니라 반박하고 검증할 기준점으로 사용한다.
+- 주장보다 테스트, 실패 경로, 실행 결과를 우선한다.
+
+단일 에이전트는 자신이 만든 코드와 설명을 재검토할 때 같은 전제를 반복하기 쉽습니다. 다른 모델과 추론 강도를 충돌시키면 서로 다른 휴리스틱과 실패 지점이 드러날 가능성이 커집니다.
+
+### 어떤 한계가 있는가
+
+- 같은 시스템 지시와 reviewer 프레이밍으로 상관 편향이 생길 수 있다.
+- reviewer가 가장 자신감 있는 답에 앵커링할 수 있다.
+- shared workspace 변경이 후발 worker의 독립성을 훼손할 수 있다.
+- mandatory reject가 실질적 반증 없이 형식적 재시도가 될 수 있다.
+- worker와 reviewer가 같은 모델 계열이면 실제 다양성이 작을 수 있다.
+
+따라서 이 구조의 핵심 평가 기준은 에이전트 수 자체가 아닙니다.
+
+```text
+독립성 × 모델 다양성 × 불일치 추출 × 증거 기반 판정
+```
+
 ## What It Does
 
 - shows the PR2-style Whiplash ASCII banner at activation time
@@ -13,6 +66,7 @@
 - gives the same initial task to all three workers in round 1
 - waits for all expected worker outputs before invoking the reviewer
 - compares worker outputs before retrying
+- uses round 2 for evidence-only adversarial revalidation without file edits
 - treats `lead_worker` as a provisional benchmark, not a sole next executor
 - sends fail-round retry orders back to all three workers by default, using the lead benchmark to pressure stronger proof, corrections, or rebuttals
 - allows role-split retries only after the first comparative review, while preserving three-worker adversarial comparison unless explicitly degraded
@@ -22,7 +76,7 @@
 - waits at least 10 minutes for high-reasoning Whiplash agents before treating them as stalled
 - does not treat a plain `wait_agent` timeout as worker failure
 - uses non-git verification evidence when the task runs outside a Git repository
-- rotates retry strategy across rounds instead of repeating the same failed move
+- starts repair only after round-2 revalidation confirms a defect, then rotates repair strategy
 - tracks recurrence plus a prevention note for defect classes that keep returning
 - exposes `premature_review` and `round_consumed=false` so wrappers do not advance rounds on incomplete worker sets
 - supports structured verdict data for internal loop control
@@ -101,11 +155,11 @@ flowchart TD
     Q -->|Yes| S["Verbatim Orders to worker + Proof required"]
     R --> S
     S --> LB["Nominate lead_worker as provisional benchmark, not sole executor"]
-    LB --> T{"Retry strategy for this round?"}
-    T -->|Round 2| U["Direct fix retry"]
-    T -->|Round 3| V["Structural change retry"]
-    T -->|Round 4| W["Reset approach retry"]
-    T -->|Round 5| X["Last chance retry"]
+    LB --> T{"Retry mode for this round?"}
+    T -->|Round 2| U["Evidence-only adversarial revalidation; no edits"]
+    T -->|Round 3| V["Direct fix after confirmed defect"]
+    T -->|Round 4| W["Structural change retry"]
+    T -->|Round 5| X["Reset approach; last chance"]
     U --> Y["Next pass to all 3 workers with same orders, proof required, lead benchmark, and comparative critique"]
     V --> Y
     W --> Y
@@ -129,7 +183,7 @@ flowchart TD
 - Active fail rounds should persist through `.codex/context/whiplash-state.json` so the next user turn resumes the same loop before any new top-level workflow starts.
 - New execution requests that arrive during an active fail round should be queued into the next Whiplash round unless the user explicitly stops or replaces Whiplash.
 - Outside Git repositories, verification should rely on file contents, hashes, byte checks, listings, or targeted command output rather than failing `git diff` as core evidence.
-- Retry strategy rotates across rounds: direct fix, structural change, reset approach, then last chance.
+- Round 2 expands and challenges evidence without edits. If it confirms a defect, repair starts in round 3 and rotates through direct fix, structural change, and reset approach.
 - Evidence must cover build-or-equivalent output, changed behavior, at least one failure path, and no-regression confidence.
 - Repeated defect classes should be surfaced through `recurrence` and `prevention_note`.
 
