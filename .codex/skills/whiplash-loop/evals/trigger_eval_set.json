@@ -12,7 +12,7 @@
     "should_trigger": true
   },
   {
-    "query": "플레처소환 round 2부터는 direct fix로 가고 reviewer랑 worker 셋은 유지해.",
+    "query": "플레처소환 round 2는 수정 없이 증거 확장과 재검증으로 가고 reviewer랑 worker 셋은 유지해.",
     "should_trigger": true
   },
   {

@@ -1,6 +1,6 @@
 ---
 name: whiplash-loop
-description: Use when the user message includes "위플래쉬" or "플레처소환" and the task is implementation, bug fixing, refactoring, debugging, or code review in chat. Applies a Fletcher-orchestrated retry loop with mandatory reviewer separation, a default 3-worker subagent swarm, hidden round-1 reject, comparative critique across independent workers, forceful English worker orders, and up to 5 review rounds. Prefer this skill when the user wants a stronger proof-first loop than a normal one-pass answer.
+description: Use when the user message includes "위플래쉬" or "플레처소환" and the task is implementation, bug fixing, refactoring, debugging, or code review in chat. Applies a Fletcher-orchestrated retry loop with mandatory reviewer separation, a default 3-worker subagent swarm, hidden round-1 reject, evidence-only round-2 adversarial revalidation, comparative critique across independent workers, forceful English worker orders, and up to 5 review rounds. Prefer this skill when the user wants a stronger proof-first loop than a normal one-pass answer.
 ---
 
 # Whiplash Loop
@@ -43,17 +43,18 @@ Worker subagents are the default, not an optional enhancement.
 15. Do not invoke the reviewer until every active worker expected for the current round has reached a terminal output (`completed`, explicit failure, or accepted noncompliance after the recovery rule). A partial worker result is progress, not review input.
 16. If only one or two of the default three workers have returned, keep waiting or recover the missing workers. Do not spend the round-1 mandatory reject on missing-worker evidence.
 17. After all expected worker outputs arrive, the orchestrator sends the complete worker set to the reviewer for comparative review before any retry.
-18. Round 1 is a hidden mandatory rejection unless the correct outcome is immediate human escalation.
+18. Round 1 is a hidden mandatory rejection. There is no Round 1 pass path.
 19. Round 1 reject must include comparative critique across workers.
 20. Only after the first comparative review may the orchestrator nominate a `lead_worker`, role split, or focused retry strategy.
 21. A `lead_worker` is a provisional benchmark, not the sole next executor. Use that worker's result to pressure all three workers: the lead must prove the result harder, and the others must explain what they missed, why they disagree, or what stronger evidence overturns the lead.
 22. After the first comparative review, the next pass still goes to all three workers by default with the same reviewer orders, proof requirements, lead benchmark, and comparative critique. Do not collapse to a single lead-worker retry unless the user explicitly chose single-agent or degraded mode.
-23. Round 2 and beyond are controlled by reviewer judgment, but full Whiplash v2 preserves three-worker adversarial comparison unless explicitly degraded.
-24. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
-25. If the reviewer fails a round and `continue_loop=true`, treat the Whiplash loop as still active across subsequent user turns until the reviewer passes, explicitly stops for human judgment, the user explicitly aborts the loop, or the loop reaches a terminal stop condition.
-26. Do not interpret a newer user implementation request, optimization request, or named execution skill as an automatic replacement for the active Whiplash loop while `continue_loop=true`. By default, reinterpret that new input as carry-forward material for the next Whiplash round.
-27. Resume before replace. At the start of any new turn, first check whether an active Whiplash loop already exists and should be resumed before starting any new top-level workflow.
-28. If `continue_loop=true`, starting a new top-level workflow or closing the Whiplash reviewer/workers before a terminal stop condition is a protocol violation unless the user explicitly says to stop Whiplash.
+23. Round 2 is a mandatory evidence-only adversarial revalidation round. Workers must not edit files; they reproduce claims, expand failure-path evidence, challenge the lead benchmark, and return proof or rebuttal.
+24. Round 3 and beyond are controlled by reviewer judgment, but full Whiplash v2 preserves three-worker adversarial comparison unless explicitly degraded.
+25. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
+26. If the reviewer fails a round and `continue_loop=true`, treat the Whiplash loop as still active across subsequent user turns until the reviewer passes, explicitly stops for human judgment, the user explicitly aborts the loop, or the loop reaches a terminal stop condition.
+27. Do not interpret a newer user implementation request, optimization request, or named execution skill as an automatic replacement for the active Whiplash loop while `continue_loop=true`. By default, reinterpret that new input as carry-forward material for the next Whiplash round.
+28. Resume before replace. At the start of any new turn, first check whether an active Whiplash loop already exists and should be resumed before starting any new top-level workflow.
+29. If `continue_loop=true`, starting a new top-level workflow or closing the Whiplash reviewer/workers before a terminal stop condition is a protocol violation unless the user explicitly says to stop Whiplash.
 
 ## Long-Reasoning Wait Policy
 
@@ -91,13 +92,15 @@ Track at least:
 
 - current round number
 - active worker set
-- current retry strategy
+- current retry mode and repair strategy
 - unresolved findings
 - comparative critique notes
 - worker scorecard
 - leading worker, if one exists
 - current `worker_orders`
 - current `proof_required`
+- current `retry_mode`
+- current `code_change_required`
 - recurrence status
 - prevention note, if one exists
 - carried-over residual risk
@@ -127,6 +130,8 @@ Minimum artifact fields:
 - `reviewer_summary`
 - `worker_orders`
 - `proof_required`
+- `retry_mode`
+- `code_change_required`
 - `lead_worker`
 - `reviewer_agent_id`
 - `worker_agent_ids`
@@ -169,16 +174,18 @@ Examples:
 - User says `위플래쉬 종료하고 그냥 커밋해`:
   Exit the loop because the user explicitly aborted it.
 
-## Retry Strategy Rotation
+## Retry Mode and Strategy Rotation
 
-When the loop fails multiple rounds, rotate strategy. Do not retry the same approach twice.
+Keep the routing action separate from the work mode. `recommended_next_action=retry_worker` means only that another worker pass should run; it does not imply a code edit.
 
-- Round 2 (1st retry): direct fix. Address the exact defect reported with the smallest credible repair.
-- Round 3 (2nd retry): structural change. Change the approach, control flow, type boundary, or validation pattern rather than repeating the same fix.
-- Round 4 (3rd retry): reset approach. Revert the failed direction and re-implement from a different design angle.
-- Round 5: last chance. If the loop is still failing after three different retry strategies, treat the work as non-converging unless the reviewer can point to measurable progress.
+- Round 2: `evidence_revalidation`. Do not edit files. Reproduce claims, expand failure-path and no-regression evidence, challenge the lead result, and return proof or a concrete rebuttal. A round-1 mandatory reject does not imply that an implementation defect exists; do not invent one to justify rejection.
+- Round 3: `direct_fix`, but only after round 2 confirms a concrete implementation defect. Address that defect with the smallest credible repair.
+- Round 4: `structural_change`. Change the approach, control flow, type boundary, or validation pattern rather than repeating the failed direct fix.
+- Round 5: `reset_approach` and last chance. Re-implement from a different design angle. If the loop is still failing, treat the work as non-converging unless the reviewer can point to measurable progress.
 
-The reviewer should make the current retry strategy explicit in the `worker_orders` or the comparative critique.
+Use `collect_missing_workers` for premature reviews and `none` when finishing or asking a human. Set `code_change_required=false` for `none`, `collect_missing_workers`, and `evidence_revalidation`; set it to `true` only for `direct_fix`, `structural_change`, or `reset_approach` backed by a concrete defect.
+
+The reviewer must make `retry_mode` and `code_change_required` explicit. Rotate repair strategy only after a confirmed repair attempt fails; do not treat an evidence-only rejection as a failed code repair.
 
 ## Next Worker Pass
 
@@ -189,7 +196,7 @@ When the reviewer fails a round:
 3. Copy the reviewer `worker_orders` into the next worker pass.
 4. Copy the reviewer `proof_required` into the next worker pass.
 5. When useful, turn the comparative critique into explicit combination orders that name which worker strengths to preserve, combine, or discard in the next pass.
-6. Select the retry strategy for the current round using `Retry Strategy Rotation`.
+6. Select `retry_mode` and `code_change_required` using `Retry Mode and Strategy Rotation`.
 7. Make the next worker pass address those items before adding any optional polish.
 8. Keep the next worker pass focused on defect closure and proof.
 9. Send the next pass to all three workers by default. Each worker receives the same reviewer orders, proof requirements, lead-worker benchmark, and comparative critique, then responds independently with stronger proof, correction, or rebuttal.
@@ -273,6 +280,8 @@ Map the review to this contract:
 - `continue_loop`: `true` or `false`
 - `loop_exit_reason`: why the reviewer chose stop or continue
 - `recommended_next_action`: `finish`, `retry_worker`, or `ask_human`
+- `retry_mode`: `none`, `collect_missing_workers`, `evidence_revalidation`, `direct_fix`, `structural_change`, or `reset_approach`
+- `code_change_required`: whether the next worker pass is authorized to edit files
 - `lead_worker`: `low`, `medium`, `high`, `all`, or `none`; this is the provisional benchmark for adversarial comparison, not permission to collapse the next pass to a single worker
 - `worker_scorecard`: comparative assessment of the current worker outputs
 - `issues`: concrete defects with severity and suggested fix
@@ -291,8 +300,9 @@ Read [references/whiplash-reviewer-profile.md](references/whiplash-reviewer-prof
 Keep the machine-readable verdict available for loop control, but do not surface raw JSON or JSONL in normal user-visible chat unless the parent agent explicitly asks for it.
 
 - Prefer matching [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) exactly when the parent agent or wrapper explicitly needs machine-parsable loop control.
-- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `lead_worker`, `worker_scorecard`, `issues`, `evidence`, `worker_orders`, `proof_required`, `premature_review`, `round_consumed`, `recurrence`, and `prevention_note`.
-- For premature reviews, set `decision=premature_review`, `premature_review=true`, `round_consumed=false`, `continue_loop=true`, `recommended_next_action=retry_worker`, and `lead_worker=none`.
+- Include `decision`, `summary`, `retryable`, `needs_human`, `continue_loop`, `loop_exit_reason`, `recommended_next_action`, `retry_mode`, `code_change_required`, `lead_worker`, `worker_scorecard`, `issues`, `evidence`, `worker_orders`, `proof_required`, `premature_review`, `round_consumed`, `recurrence`, and `prevention_note`.
+- For premature reviews, set `decision=premature_review`, `premature_review=true`, `round_consumed=false`, `continue_loop=true`, `recommended_next_action=retry_worker`, `retry_mode=collect_missing_workers`, `code_change_required=false`, and `lead_worker=none`.
+- For the valid round-1 mandatory reject, set `recommended_next_action=retry_worker`, `retry_mode=evidence_revalidation`, and `code_change_required=false`. Do not fabricate an implementation issue when the actual gap is proof.
 - Parent/wrapper control must never increment the round counter or count the hidden round-1 rejection when `round_consumed=false`.
 - In normal chat mode, keep the user-visible response human-readable and do not dump the machine object into the conversation.
 - Never emit JSONL to the user-visible chat stream for this skill.
@@ -346,7 +356,8 @@ This signal does not change the retry loop by itself. It exists so the parent ag
 - Round 1 default: do not call the reviewer until all three worker outputs are terminal.
 - Round 1 reject is hidden from workers until the orchestrator delivers comparative critique.
 - Premature reviewer calls with missing worker outputs do not count as a valid round-1 reject.
-- Round 2+ default: send the reviewer orders, proof requirements, lead benchmark, and comparative critique back to all three workers for another independent pass.
+- Round 2 default: send the reviewer orders, proof requirements, lead benchmark, and comparative critique back to all three workers for an evidence-only adversarial revalidation pass. Do not edit files.
+- Round 3+ default: begin repair only after round 2 confirms a concrete defect, then rotate `direct_fix`, `structural_change`, and `reset_approach` without repeating a failed repair strategy.
 - `lead_worker` default: benchmark and pressure device, not sole executor.
 - Missing tests or weak evidence: reject.
 - Happy-path-only verification: reject.

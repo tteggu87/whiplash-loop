@@ -10,6 +10,8 @@
     "continue_loop",
     "loop_exit_reason",
     "recommended_next_action",
+    "retry_mode",
+    "code_change_required",
     "lead_worker",
     "worker_scorecard",
     "issues",
@@ -45,6 +47,15 @@
     "recommended_next_action": {
       "type": "string",
       "enum": ["finish", "retry_worker", "ask_human"]
+    },
+    "retry_mode": {
+      "type": "string",
+      "enum": ["none", "collect_missing_workers", "evidence_revalidation", "direct_fix", "structural_change", "reset_approach"],
+      "description": "Work mode for the next action. retry_worker is routing only and does not imply a code edit."
+    },
+    "code_change_required": {
+      "type": "boolean",
+      "description": "True only when the next worker pass is authorized to edit files for a confirmed implementation defect."
     },
     "lead_worker": {
       "type": "string",
@@ -149,5 +160,81 @@
       "type": "string",
       "description": "Systemic guard, rule, or test that would prevent this defect class from recurring. Empty string if recurrence is false."
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "retry_mode": {
+            "enum": ["none", "collect_missing_workers", "evidence_revalidation"]
+          }
+        },
+        "required": ["retry_mode"]
+      },
+      "then": {
+        "properties": {
+          "code_change_required": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "retry_mode": {
+            "enum": ["direct_fix", "structural_change", "reset_approach"]
+          }
+        },
+        "required": ["retry_mode"]
+      },
+      "then": {
+        "properties": {
+          "code_change_required": {
+            "const": true
+          },
+          "issues": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "premature_review"
+          }
+        },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "continue_loop": { "const": true },
+          "recommended_next_action": { "const": "retry_worker" },
+          "retry_mode": { "const": "collect_missing_workers" },
+          "code_change_required": { "const": false },
+          "lead_worker": { "const": "none" },
+          "premature_review": { "const": true },
+          "round_consumed": { "const": false }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "recommended_next_action": {
+            "enum": ["finish", "ask_human"]
+          }
+        },
+        "required": ["recommended_next_action"]
+      },
+      "then": {
+        "properties": {
+          "retry_mode": { "const": "none" },
+          "code_change_required": { "const": false }
+        }
+      }
+    }
+  ]
 }

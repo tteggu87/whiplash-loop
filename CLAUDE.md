@@ -36,7 +36,8 @@ The current repo is not the old single-worker loop. The active contract is:
 - hidden round-1 reject owned by the reviewer/orchestrator
 - comparative critique before role split
 - fail rounds surface verbatim `Orders to worker`
-- retry strategy rotation across later rounds
+- evidence-only adversarial revalidation in round 2
+- repair strategy rotation from round 3 after a concrete defect is confirmed
 - evidence checklist for pass/fail
 - non-convergence detection
 - recurrence tracking with `recurrence` and `prevention_note`
@@ -58,6 +59,7 @@ When changing loop behavior, keep these files aligned:
 - do not silently weaken mandatory reviewer separation or the default 3-worker swarm
 - do not silently shrink eval coverage when adding features
 - do not let schema, reviewer prompt, and skill text drift apart
+- do not interpret `retry_worker` as permission to edit; use `retry_mode` and `code_change_required`
 - do not replace non-git verification rules with git-only assumptions
 - do not quote or closely paraphrase movie dialogue in worker/reviewer copy
 

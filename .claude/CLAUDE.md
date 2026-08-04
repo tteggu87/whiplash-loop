@@ -31,6 +31,8 @@ Use this file as the quick editing reference for Claude Code sessions working in
 - hidden reject belongs to the Fletcher reviewer, not the workers
 - comparative critique happens before specialization
 - after the first comparative review, the reviewer may explicitly direct the next pass to preserve or combine worker strengths
+- round 2 is evidence-only adversarial revalidation and must not edit files
+- repair begins in round 3 only after round 2 confirms a concrete defect
 - fail rounds surface verbatim `Orders to worker`
 
 ## When Editing Contracts
