@@ -78,7 +78,7 @@ Default artifact layout:
 - `.codex/context/whiplash-trajectories/round-<round>-medium.json`
 - `.codex/context/whiplash-trajectories/round-<round>-high.json`
 
-After writing each packet, compute its SHA-256 and carry the repository-relative path plus digest in loop state. A `mailbox:` address, agent id, or chat summary may be supplemental provenance but must never be the only trajectory reference. Validate packets with `scripts/trajectory_tool.py validate` and [references/whiplash-evidence-trajectory.schema.json](references/whiplash-evidence-trajectory.schema.json) when the files are available. If the task's authorization forbids these compact state writes, mark the trajectory `unavailable` and expose the durability gap instead of claiming full replayability.
+After writing each packet, compute its SHA-256 and carry the repository-relative path plus digest in loop state. A `mailbox:` address, agent id, or chat summary may be supplemental provenance but must never be the only trajectory reference. If the task's authorization forbids these compact state writes, mark the trajectory `unavailable` and expose the durability gap instead of claiming full replayability.
 
 At minimum record:
 
@@ -92,11 +92,11 @@ At minimum record:
 - changed-behavior, failure-path, and adjacent no-regression evidence;
 - claims, proof gaps, and an explicit `complete`, `incomplete`, `stale`, or `unavailable` trajectory status.
 
-Use Git identity plus a content-derived, path-scoped manifest hash when available. A commit id, `git status` output, status-output hash, filename list, or diff-stat alone is insufficient for a dirty worktree because file contents can change while those values remain unchanged. The manifest must cover the explicit claim scope and hash tracked, untracked, and ignored file contents within that scope, with exclusions recorded. Outside Git, use the same content-derived path manifest or another deterministic content identity. `scripts/trajectory_tool.py snapshot` provides the preferred implementation. If a snapshot or command result cannot be observed, record the limitation instead of inventing a digest or claiming freshness.
+Use an appropriate Git tree, content-bearing diff identity, or targeted file hashes for the claimed scope. A commit id or `git status` output hash alone is insufficient when the worktree is dirty because contents can change while those values remain unchanged. Choose the smallest snapshot method that reliably covers the claim; do not hash unrelated repository contents by default. Outside Git, use path-scoped hashes or another deterministic snapshot reference. If a snapshot or command result cannot be observed, record the limitation instead of inventing a digest or claiming freshness.
 
 Before reviewer invocation, retry a worker once under `Subagent Compliance Recovery` when its trajectory is missing or malformed. If the replacement still cannot supply one, keep the worker terminal, mark the trajectory `unavailable` or `incomplete`, and expose that gap to the reviewer. Do not fabricate evidence, drop the worker silently, or spend the hidden reject before the complete worker set is terminal.
 
-For Round 2, `snapshot_before` and `snapshot_after` must match. Any Round-2 mutation is noncompliance and its post-mutation evidence cannot satisfy evidence-only revalidation. Before launching Round 2, verify that all three Round-1 artifact paths exist, that their bytes match the SHA-256 values recorded in loop state, and that their JSON packets validate. Pass those exact path/digest pairs and complete bounded packet contents to every worker. A comparison summary is not a substitute for the packet set. Treat a missing or digest-mismatched packet as an explicit replay gap and recover it before launch when possible.
+For Round 2, `snapshot_before` and `snapshot_after` must match. Any Round-2 mutation is noncompliance and its post-mutation evidence cannot satisfy evidence-only revalidation. Before launching Round 2, verify that all three Round-1 artifact paths exist and that their bytes match the SHA-256 values recorded in loop state. Pass those exact path/digest pairs and complete bounded packet contents to every worker. A comparison summary is not a substitute for the packet set. Treat a missing, unreadable, or digest-mismatched packet as an explicit replay gap and recover it before launch when possible.
 
 ## Long-Reasoning Wait Policy
 

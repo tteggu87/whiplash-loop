@@ -93,8 +93,6 @@ Round 2에서는 파일을 수정하지 않습니다. 세 worker가 lead 결과�
 - `.codex/skills/whiplash-loop/agents/openai.yaml`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-profile.md`
 - `.codex/skills/whiplash-loop/references/whiplash-evidence-trajectory.md`
-- `.codex/skills/whiplash-loop/references/whiplash-evidence-trajectory.schema.json`
-- `.codex/skills/whiplash-loop/scripts/trajectory_tool.py`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-verdict.schema.json`
 - `.codex/agents/whiplash-reviewer.toml`
 - `.codex/agents/whiplash-worker-low.toml`
