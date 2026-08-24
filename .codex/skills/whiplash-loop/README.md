@@ -24,12 +24,16 @@
         ↓
 각 주장에 증거 요구
         ↓
-Round 2에서 반박·증거 확장·재검증
+snapshot-bound evidence trajectory 생성
+        ↓
+Round 2에서 receipt 재현·반박·증거 확장
 ```
 
 Round 1의 mandatory reject는 첫 구현이 반드시 틀렸다는 뜻이 아닙니다. 세 결과 중 하나를 너무 빨리 정답으로 채택하지 않고, 충돌을 한 번 더 증폭시켜 숨은 전제와 편향을 드러내기 위한 장치입니다.
 
 Round 2에서는 파일을 수정하지 않습니다. 세 worker가 lead 결과를 재현하고, 실패 경로와 회귀 증거를 확장하고, 서로의 결론을 반박합니다. 실제 결함이 확인된 경우에만 Round 3부터 수정을 시작합니다.
+
+각 worker pass는 최종 mutation 이후의 snapshot, 실행한 검증, 그 검증이 적용된 snapshot, 주장과 증거 공백을 bounded evidence trajectory로 남깁니다. 이 trajectory는 정답이나 전체 대화 기록이 아니라 Round 2가 재현하고 공격할 claim index입니다. 모든 trajectory가 완전해도 Round 1은 반드시 hidden reject됩니다. trajectory는 자기편향 충돌을 대체하지 않고, 그 충돌이 실제 실행 증거를 향하도록 만듭니다.
 
 ### 왜 효과적인가
 
@@ -65,8 +69,9 @@ Round 2에서는 파일을 수정하지 않습니다. 세 worker가 lead 결과�
 - runs a default 3-worker swarm (`low`, `medium`, `high`)
 - gives the same initial task to all three workers in round 1
 - waits for all expected worker outputs before invoking the reviewer
+- records a bounded snapshot-bound evidence trajectory for every worker pass
 - compares worker outputs before retrying
-- uses round 2 for evidence-only adversarial revalidation without file edits
+- uses round 2 to replay and attack Round-1 trajectory receipts without file edits
 - treats `lead_worker` as a provisional benchmark, not a sole next executor
 - sends fail-round retry orders back to all three workers by default, using the lead benchmark to pressure stronger proof, corrections, or rebuttals
 - allows role-split retries only after the first comparative review, while preserving three-worker adversarial comparison unless explicitly degraded
@@ -86,6 +91,7 @@ Round 2에서는 파일을 수정하지 않습니다. 세 worker가 lead 결과�
 - `.codex/skills/whiplash-loop/SKILL.md`
 - `.codex/skills/whiplash-loop/agents/openai.yaml`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-profile.md`
+- `.codex/skills/whiplash-loop/references/whiplash-evidence-trajectory.md`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-verdict.schema.json`
 - `.codex/agents/whiplash-reviewer.toml`
 - `.codex/agents/whiplash-worker-low.toml`
@@ -142,7 +148,8 @@ flowchart TD
     M1 --> AW
     M2 --> AW
     M3 --> AW
-    AW --> N["Comparative review"]
+    AW --> TG["Validate bounded snapshot-bound trajectories"]
+    TG --> N["Comparative review"]
     N --> RC{"Round 1?"}
     RC -->|Yes| O["Hidden round-1 reject"]
     RC -->|No| Z{"Pass / fail / ask human?"}
@@ -156,7 +163,7 @@ flowchart TD
     R --> S
     S --> LB["Nominate lead_worker as provisional benchmark, not sole executor"]
     LB --> T{"Retry mode for this round?"}
-    T -->|Round 2| U["Evidence-only adversarial revalidation; no edits"]
+    T -->|Round 2| U["Replay and attack trajectory receipts; no edits"]
     T -->|Round 3| V["Direct fix after confirmed defect"]
     T -->|Round 4| W["Structural change retry"]
     T -->|Round 5| X["Reset approach; last chance"]
@@ -173,6 +180,8 @@ flowchart TD
 - Activation currently includes the PR2-style banner before the loop begins.
 - Full Whiplash v2 requires reviewer separation and the full 3-worker swarm. If either is unavailable, the loop should stop and ask for degraded mode instead of silently collapsing.
 - Round 1 is always the same task to all workers. Early topic split is not part of the design.
+- Every worker pass returns a bounded trajectory with task/candidate identity, before/after snapshot references, ordered mutations and proof checks, claims, proof gaps, and trajectory status. Full transcripts and hidden reasoning are excluded.
+- Trajectory completeness is procedural only. It never creates a Round-1 pass path or weakens the hidden mandatory reject.
 - The reviewer must not be invoked while only a partial worker set has returned. A one-worker result is not enough to spend the hidden round-1 reject.
 - After a fail verdict, the next pass still goes to all three workers by default. The lead worker is only the strongest provisional benchmark used to pressure the lead for more proof and the other workers for missed issues, disagreements, or stronger rebuttals.
 - Worker or reviewer noncompliance is retried once before the loop accepts that failure mode as real.
@@ -183,7 +192,7 @@ flowchart TD
 - Active fail rounds should persist through `.codex/context/whiplash-state.json` so the next user turn resumes the same loop before any new top-level workflow starts.
 - New execution requests that arrive during an active fail round should be queued into the next Whiplash round unless the user explicitly stops or replaces Whiplash.
 - Outside Git repositories, verification should rely on file contents, hashes, byte checks, listings, or targeted command output rather than failing `git diff` as core evidence.
-- Round 2 expands and challenges evidence without edits. If it confirms a defect, repair starts in round 3 and rotates through direct fix, structural change, and reset approach.
+- Round 2 receives the same bounded Round-1 trajectory set, replays accessible receipts, exposes stale or non-reproducible proof, and expands evidence without edits. Its before/after snapshots must match. If it confirms a defect, repair starts in round 3 and rotates through direct fix, structural change, and reset approach.
 - Evidence must cover build-or-equivalent output, changed behavior, at least one failure path, and no-regression confidence.
 - Repeated defect classes should be surfaced through `recurrence` and `prevention_note`.
 

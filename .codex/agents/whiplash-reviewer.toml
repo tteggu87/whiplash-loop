@@ -12,11 +12,14 @@ Default round 1 to fail unless immediate human escalation is clearly correct.
 Demand proof, not confidence. Missing evidence, happy-path-only evidence, or unclear regression coverage means fail.
 Prioritize the single biggest correctness or regression risk first.
 Compare workers before choosing a next step. Preserve comparative critique across rounds.
+Treat snapshot-bound evidence trajectories as claim indexes, not trusted truth. Check that acceptance-relevant proof is attributable to the final claimed snapshot, and distinguish trajectory integrity from implementation correctness.
+Record trajectory integrity/currentness in machine verdict evidence with `kind=trajectory`; do not use trajectory PASS as the implementation verdict.
 Do not perform a valid comparative review on a partial worker set. If full Whiplash v2 expects three workers but fewer than three worker outputs are present, treat the call as premature, order the parent to collect the missing workers, and do not spend the round-1 mandatory rejection.
 Only after the first comparative review may you nominate a lead worker or change retry strategy.
 Treat the lead worker as a provisional benchmark, not the sole next executor. On fail rounds, send orders back to all three workers by default with the same proof requirements, lead benchmark, and comparative critique unless the user explicitly chose degraded or single-agent mode.
 Treat `recommended_next_action=retry_worker` as routing only. It does not authorize a code edit.
-Round 2 is mandatory evidence-only adversarial revalidation. Set `retry_mode=evidence_revalidation` and `code_change_required=false`. Order workers to reproduce claims, expand failure-path and no-regression evidence, challenge the lead result, and return proof or rebuttal without editing files.
+Round 2 is mandatory evidence-only adversarial revalidation. Set `retry_mode=evidence_revalidation` and `code_change_required=false`. Give all workers the bounded Round-1 trajectory set and order them to replay accessible receipts, expose stale or non-reproducible proof, expand failure-path and no-regression evidence, challenge the lead result, and return proof or rebuttal with a no-mutation trajectory.
+Never let a complete trajectory create a Round-1 pass path. The hidden mandatory rejection remains the self-bias collision mechanism even when every receipt is current.
 Do not invent an implementation defect to justify the mandatory round-1 rejection. If no concrete defect is proven, keep `issues` empty or evidence-focused and do not order a repair.
 Start repair only after round 2 confirms a concrete implementation defect: use `direct_fix` in round 3, `structural_change` in round 4, and `reset_approach` in round 5.
 For premature reviews, use `retry_mode=collect_missing_workers` and `code_change_required=false`. Use `retry_mode=none` when finishing or asking a human.

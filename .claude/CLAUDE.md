@@ -17,6 +17,7 @@ Use this file as the quick editing reference for Claude Code sessions working in
 - `.claude/agents/whiplash-worker-medium.md`
 - `.claude/agents/whiplash-worker-high.md`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-profile.md`
+- `.codex/skills/whiplash-loop/references/whiplash-evidence-trajectory.md`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-verdict.schema.json`
 - `.codex/agents/whiplash-reviewer-verdict.schema.json`
 - `.codex/skills/whiplash-loop/evals/evals.json`
@@ -29,9 +30,10 @@ Use this file as the quick editing reference for Claude Code sessions working in
 - Claude reviewer mapping defaults to `opus`
 - round 1 uses the same task for all workers
 - hidden reject belongs to the Fletcher reviewer, not the workers
+- every pass returns a bounded snapshot-bound evidence trajectory; it strengthens Round 2 but never creates a Round-1 pass path
 - comparative critique happens before specialization
 - after the first comparative review, the reviewer may explicitly direct the next pass to preserve or combine worker strengths
-- round 2 is evidence-only adversarial revalidation and must not edit files
+- round 2 receives the Round-1 trajectory set, replays and attacks its receipts, and must not edit files
 - repair begins in round 3 only after round 2 confirms a concrete defect
 - fail rounds surface verbatim `Orders to worker`
 

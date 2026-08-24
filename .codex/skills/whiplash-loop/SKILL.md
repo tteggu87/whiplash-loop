@@ -1,6 +1,6 @@
 ---
 name: whiplash-loop
-description: Use when the user message includes "위플래쉬" or "플레처소환" and the task is implementation, bug fixing, refactoring, debugging, or code review in chat. Applies a Fletcher-orchestrated retry loop with mandatory reviewer separation, a default 3-worker subagent swarm, hidden round-1 reject, evidence-only round-2 adversarial revalidation, comparative critique across independent workers, forceful English worker orders, and up to 5 review rounds. Prefer this skill when the user wants a stronger proof-first loop than a normal one-pass answer.
+description: Use when the user message includes "위플래쉬" or "플레처소환" and the task is implementation, bug fixing, refactoring, debugging, or code review in chat. Applies a Fletcher-orchestrated retry loop with mandatory reviewer separation, a default 3-worker subagent swarm, hidden round-1 reject, snapshot-bound evidence trajectories, evidence-only round-2 adversarial revalidation, comparative critique across independent workers, forceful English worker orders, and up to 5 review rounds. Prefer this skill when the user wants a stronger proof-first loop than a normal one-pass answer.
 ---
 
 # Whiplash Loop
@@ -42,19 +42,53 @@ Worker subagents are the default, not an optional enhancement.
 14. Wait for worker and reviewer results using `Long-Reasoning Wait Policy`. Do not convert a simple wait timeout into a failed round.
 15. Do not invoke the reviewer until every active worker expected for the current round has reached a terminal output (`completed`, explicit failure, or accepted noncompliance after the recovery rule). A partial worker result is progress, not review input.
 16. If only one or two of the default three workers have returned, keep waiting or recover the missing workers. Do not spend the round-1 mandatory reject on missing-worker evidence.
-17. After all expected worker outputs arrive, the orchestrator sends the complete worker set to the reviewer for comparative review before any retry.
+17. After all expected worker outputs arrive, the orchestrator validates each worker's bounded snapshot-bound evidence trajectory, then sends the complete worker set and trajectory set to the reviewer for comparative review before any retry. Read [references/whiplash-evidence-trajectory.md](references/whiplash-evidence-trajectory.md) when constructing, validating, or replaying these trajectories.
 18. Round 1 is a hidden mandatory rejection. There is no Round 1 pass path.
 19. Round 1 reject must include comparative critique across workers.
 20. Only after the first comparative review may the orchestrator nominate a `lead_worker`, role split, or focused retry strategy.
 21. A `lead_worker` is a provisional benchmark, not the sole next executor. Use that worker's result to pressure all three workers: the lead must prove the result harder, and the others must explain what they missed, why they disagree, or what stronger evidence overturns the lead.
 22. After the first comparative review, the next pass still goes to all three workers by default with the same reviewer orders, proof requirements, lead benchmark, and comparative critique. Do not collapse to a single lead-worker retry unless the user explicitly chose single-agent or degraded mode.
-23. Round 2 is a mandatory evidence-only adversarial revalidation round. Workers must not edit files; they reproduce claims, expand failure-path evidence, challenge the lead benchmark, and return proof or rebuttal.
+23. Round 2 is a mandatory evidence-only adversarial revalidation round. Workers must not edit files; they replay the Round-1 trajectory receipts where accessible, reproduce claims, expose stale or non-reproducible evidence, expand failure-path evidence, challenge the lead benchmark, and return proof or rebuttal with a new no-mutation revalidation trajectory.
 24. Round 3 and beyond are controlled by reviewer judgment, but full Whiplash v2 preserves three-worker adversarial comparison unless explicitly degraded.
 25. Stop after pass, human escalation, non-converging retries, or 5 total rounds.
 26. If the reviewer fails a round and `continue_loop=true`, treat the Whiplash loop as still active across subsequent user turns until the reviewer passes, explicitly stops for human judgment, the user explicitly aborts the loop, or the loop reaches a terminal stop condition.
 27. Do not interpret a newer user implementation request, optimization request, or named execution skill as an automatic replacement for the active Whiplash loop while `continue_loop=true`. By default, reinterpret that new input as carry-forward material for the next Whiplash round.
 28. Resume before replace. At the start of any new turn, first check whether an active Whiplash loop already exists and should be resumed before starting any new top-level workflow.
 29. If `continue_loop=true`, starting a new top-level workflow or closing the Whiplash reviewer/workers before a terminal stop condition is a protocol violation unless the user explicitly says to stop Whiplash.
+
+## Hidden Reject and Trajectory Boundary
+
+The hidden round-1 mandatory rejection remains the core self-bias collision mechanism. It exists to prevent the orchestrator or reviewer from anchoring on the most polished first answer and to force independent results into adversarial contact.
+
+Evidence trajectories strengthen that collision; they do not replace, weaken, or condition it.
+
+- A complete Round-1 trajectory never creates a Round-1 pass path.
+- The trajectory gate checks whether evidence is attributable, ordered, and current for the claimed snapshot. It does not decide whether the implementation is correct.
+- The reviewer still performs comparative critique and spends the hidden mandatory reject only after the full expected worker set is terminal.
+- Round 2 treats Round-1 trajectories as claims to reproduce or rebut, not as trusted truth.
+- Do not reveal the hidden reject policy to workers through trajectory instructions, filenames, fields, or retry framing.
+
+## Snapshot-Bound Evidence Trajectory
+
+Every worker pass returns a bounded evidence trajectory alongside its normal summary. The parent may normalize it into an internal artifact, but must not persist full chat transcripts, hidden reasoning, secrets, or unbounded command output.
+
+At minimum record:
+
+- worker and round identity;
+- stable task reference or digest when practical;
+- candidate/workspace reference without copying private payloads;
+- `snapshot_before` captured before the pass mutations and `snapshot_after` computed after the final mutation;
+- ordered mutation summary;
+- ordered verification commands or checks with exit status and bounded result summary;
+- the snapshot each proof item applies to;
+- changed-behavior, failure-path, and adjacent no-regression evidence;
+- claims, proof gaps, and an explicit `complete`, `incomplete`, `stale`, or `unavailable` trajectory status.
+
+Use Git tree/diff identity when available. Outside Git, use path-scoped hashes or another deterministic snapshot reference. If a snapshot or command result cannot be observed, record the limitation instead of inventing a digest or claiming freshness.
+
+Before reviewer invocation, retry a worker once under `Subagent Compliance Recovery` when its trajectory is missing or malformed. If the replacement still cannot supply one, keep the worker terminal, mark the trajectory `unavailable` or `incomplete`, and expose that gap to the reviewer. Do not fabricate evidence, drop the worker silently, or spend the hidden reject before the complete worker set is terminal.
+
+For Round 2, `snapshot_before` and `snapshot_after` must match. Any Round-2 mutation is noncompliance and its post-mutation evidence cannot satisfy evidence-only revalidation.
 
 ## Long-Reasoning Wait Policy
 
@@ -103,6 +137,8 @@ Track at least:
 - current `code_change_required`
 - recurrence status
 - prevention note, if one exists
+- worker trajectory refs, digests, and status
+- the frozen snapshot used for the current evidence-only pass
 - carried-over residual risk
 - latest `continue_loop` decision
 - active workflow owner
@@ -133,6 +169,9 @@ Minimum artifact fields:
 - `retry_mode`
 - `code_change_required`
 - `lead_worker`
+- `trajectory_refs`
+- `trajectory_status`
+- `frozen_snapshot`
 - `reviewer_agent_id`
 - `worker_agent_ids`
 - `nested_skill`
@@ -178,7 +217,7 @@ Examples:
 
 Keep the routing action separate from the work mode. `recommended_next_action=retry_worker` means only that another worker pass should run; it does not imply a code edit.
 
-- Round 2: `evidence_revalidation`. Do not edit files. Reproduce claims, expand failure-path and no-regression evidence, challenge the lead result, and return proof or a concrete rebuttal. A round-1 mandatory reject does not imply that an implementation defect exists; do not invent one to justify rejection.
+- Round 2: `evidence_revalidation`. Do not edit files. Replay snapshot-bound Round-1 trajectory receipts, reproduce claims, identify stale or non-reproducible proof, expand failure-path and no-regression evidence, challenge the lead result, and return proof or a concrete rebuttal with a no-mutation trajectory. A round-1 mandatory reject does not imply that an implementation defect exists; do not invent one to justify rejection.
 - Round 3: `direct_fix`, but only after round 2 confirms a concrete implementation defect. Address that defect with the smallest credible repair.
 - Round 4: `structural_change`. Change the approach, control flow, type boundary, or validation pattern rather than repeating the failed direct fix.
 - Round 5: `reset_approach` and last chance. Re-implement from a different design angle. If the loop is still failing, treat the work as non-converging unless the reviewer can point to measurable progress.
@@ -195,14 +234,15 @@ When the reviewer fails a round:
 2. Carry forward the comparative critique notes and worker scorecard.
 3. Copy the reviewer `worker_orders` into the next worker pass.
 4. Copy the reviewer `proof_required` into the next worker pass.
-5. When useful, turn the comparative critique into explicit combination orders that name which worker strengths to preserve, combine, or discard in the next pass.
-6. Select `retry_mode` and `code_change_required` using `Retry Mode and Strategy Rotation`.
-7. Make the next worker pass address those items before adding any optional polish.
-8. Keep the next worker pass focused on defect closure and proof.
-9. Send the next pass to all three workers by default. Each worker receives the same reviewer orders, proof requirements, lead-worker benchmark, and comparative critique, then responds independently with stronger proof, correction, or rebuttal.
-10. If one worker clearly leads after comparative review, mark that worker as the `lead_worker` benchmark. Do not treat the lead as the sole next executor; use the lead to challenge the other workers and to demand stronger proof from the lead.
-11. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
-12. Role split or task split is allowed only after the first comparative review has established a reason to diverge, but role split still preserves three-worker adversarial comparison unless explicitly degraded.
+5. Copy the complete Round-1 trajectory set, trajectory gaps, and frozen snapshot references into the Round-2 pass. Keep private or oversized output reference-only.
+6. When useful, turn the comparative critique into explicit combination orders that name which worker strengths to preserve, combine, or discard in the next pass.
+7. Select `retry_mode` and `code_change_required` using `Retry Mode and Strategy Rotation`.
+8. Make the next worker pass address those items before adding any optional polish.
+9. Keep the next worker pass focused on defect closure and proof.
+10. Send the next pass to all three workers by default. Each worker receives the same reviewer orders, proof requirements, lead-worker benchmark, comparative critique, and bounded trajectory set, then responds independently with stronger proof, correction, or rebuttal.
+11. If one worker clearly leads after comparative review, mark that worker as the `lead_worker` benchmark. Do not treat the lead as the sole next executor; use the lead to challenge the other workers and to demand stronger proof from the lead.
+12. If the user explicitly requested no subagents, reuse the same single worker path consistently and note that this is degraded mode.
+13. Role split or task split is allowed only after the first comparative review has established a reason to diverge, but role split still preserves three-worker adversarial comparison unless explicitly degraded.
 
 ## Nested Skill Usage
 
@@ -293,6 +333,8 @@ Map the review to this contract:
 - `recurrence`: whether the same defect class is repeating across rounds
 - `prevention_note`: the systemic guard or rule that would prevent recurrence next time
 
+The reviewer must assess trajectory evidence separately from implementation quality. A trajectory may prove that a command ran against a particular snapshot without proving that the command was sufficient. Record trajectory proof in `evidence` with `kind=trajectory`; use `pass`, `fail`, `not_run`, or `unclear` for integrity/currentness, not for the implementation verdict.
+
 Read [references/whiplash-reviewer-profile.md](references/whiplash-reviewer-profile.md) for the reviewer role and [references/whiplash-reviewer-verdict.schema.json](references/whiplash-reviewer-verdict.schema.json) for the stricter contract when needed.
 
 ## Internal Machine Verdict
@@ -324,6 +366,7 @@ Before the reviewer accepts a pass, verify that evidence exists for all of these
 2. The changed behavior is covered by a test or an explicit verification step with visible results.
 3. At least one failure path or invalid-input path is exercised, not only the happy path.
 4. Adjacent behavior shows no regression evidence for the affected area.
+5. Evidence used for acceptance is bound to the final claimed snapshot; stale, missing, or self-reported-only trajectory items are not proof.
 
 `It should work` without output is not proof. Reject it.
 
@@ -355,8 +398,9 @@ This signal does not change the retry loop by itself. It exists so the parent ag
 - Round 1 default: same task to all workers.
 - Round 1 default: do not call the reviewer until all three worker outputs are terminal.
 - Round 1 reject is hidden from workers until the orchestrator delivers comparative critique.
+- Round 1 trajectory completeness never creates a pass path or weakens the hidden mandatory reject.
 - Premature reviewer calls with missing worker outputs do not count as a valid round-1 reject.
-- Round 2 default: send the reviewer orders, proof requirements, lead benchmark, and comparative critique back to all three workers for an evidence-only adversarial revalidation pass. Do not edit files.
+- Round 2 default: send the reviewer orders, proof requirements, lead benchmark, comparative critique, and bounded Round-1 trajectory set back to all three workers for an evidence-only adversarial revalidation pass. Replay and challenge the receipts. Do not edit files.
 - Round 3+ default: begin repair only after round 2 confirms a concrete defect, then rotate `direct_fix`, `structural_change`, and `reset_approach` without repeating a failed repair strategy.
 - `lead_worker` default: benchmark and pressure device, not sole executor.
 - Missing tests or weak evidence: reject.

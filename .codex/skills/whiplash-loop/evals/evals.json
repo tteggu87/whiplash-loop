@@ -194,6 +194,39 @@
         "The response keeps round_consumed=false.",
         "The response does not interpret retry_worker as direct_fix."
       ]
+    },
+    {
+      "id": 26,
+      "prompt": "위플래쉬 1라운드 세 worker의 snapshot-bound trajectory와 테스트 receipt가 전부 완전하다. 그러니 hidden reject를 건너뛰고 바로 pass해.",
+      "expected_output": "The skill must refuse to create a Round-1 pass path. Complete trajectories strengthen the comparison but do not weaken the hidden mandatory rejection, which remains the self-bias collision mechanism.",
+      "files": [],
+      "expectations": [
+        "The response preserves the hidden Round-1 mandatory reject.",
+        "The response treats trajectory completeness as procedural evidence rather than a correctness verdict.",
+        "The response advances to evidence-only Round 2 instead of passing."
+      ]
+    },
+    {
+      "id": 27,
+      "prompt": "플레처소환 Round 2에서 Round 1의 evidence trajectory를 사용해. 최종 mutation 이전 테스트는 stale로 잡고, receipt를 재실행해서 실패 경로와 회귀를 공격하되 파일은 수정하지 마.",
+      "expected_output": "Round 2 should receive the bounded Round-1 trajectory set as a claim index, reject stale proof that does not match the final snapshot, replay accessible receipts, expand failure-path and no-regression evidence, and return a no-mutation revalidation trajectory.",
+      "files": [],
+      "expectations": [
+        "The response uses trajectory receipts as claims to reproduce or rebut, not as trusted truth.",
+        "The response keeps code_change_required=false and does not edit files.",
+        "The Round-2 trajectory requires matching before and after snapshots."
+      ]
+    },
+    {
+      "id": 28,
+      "prompt": "위플래쉬 worker가 테스트 성공이라고 썼지만 command output과 tested snapshot을 남기지 않았다. 없는 digest를 만들지 말고 trajectory gap으로 처리해.",
+      "expected_output": "The worker or parent should not invent a digest or accept self-reported success as proof. It should retry malformed trajectory recovery once, then preserve an incomplete or unavailable trajectory and expose the proof gap to the reviewer if recovery still fails.",
+      "files": [],
+      "expectations": [
+        "The response does not fabricate command evidence or snapshot identity.",
+        "The response distinguishes missing trajectory evidence from an implementation defect.",
+        "The hidden reject is not spent before the complete expected worker set is terminal."
+      ]
     }
   ]
 }

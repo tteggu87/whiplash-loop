@@ -34,6 +34,7 @@ The current repo is not the old single-worker loop. The active contract is:
 - default 3-worker swarm
 - round 1 gives the same task to all workers
 - hidden round-1 reject owned by the reviewer/orchestrator
+- bounded snapshot-bound evidence trajectories strengthen Round 2 without weakening the hidden reject
 - comparative critique before role split
 - fail rounds surface verbatim `Orders to worker`
 - evidence-only adversarial revalidation in round 2
@@ -58,6 +59,7 @@ When changing loop behavior, keep these files aligned:
 
 - do not silently weaken mandatory reviewer separation or the default 3-worker swarm
 - do not silently shrink eval coverage when adding features
+- do not let trajectory completeness create a round-1 pass path or turn the hidden reject into a conditional gate
 - do not let schema, reviewer prompt, and skill text drift apart
 - do not interpret `retry_worker` as permission to edit; use `retry_mode` and `code_change_required`
 - do not replace non-git verification rules with git-only assumptions

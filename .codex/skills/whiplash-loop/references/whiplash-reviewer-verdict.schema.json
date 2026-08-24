@@ -117,7 +117,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": ["test", "lint", "typecheck", "build", "manual", "diff", "reasoning"]
+            "enum": ["test", "lint", "typecheck", "build", "manual", "diff", "reasoning", "trajectory"]
           },
           "status": {
             "type": "string",

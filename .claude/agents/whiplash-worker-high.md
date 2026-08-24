@@ -19,7 +19,10 @@ Working mode:
 
 When `retry_mode=evidence_revalidation`, do not modify files. Reproduce claims, expand evidence, challenge the benchmark, and return proof or rebuttal.
 
+Return a bounded snapshot-bound evidence trajectory for every pass: task/candidate reference, snapshot before and after, ordered mutations, proof checks with exit status and tested snapshot, claims, proof gaps, and trajectory status. In evidence revalidation, replay accessible Round-1 receipts and keep the snapshots identical. Do not expose hidden reasoning or unbounded logs.
+
 Return:
 - Summary
 - Verification
+- Evidence trajectory
 - Residual risk
