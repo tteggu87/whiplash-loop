@@ -33,7 +33,7 @@ Round 1의 mandatory reject는 첫 구현이 반드시 틀렸다는 뜻이 아�
 
 Round 2에서는 파일을 수정하지 않습니다. 세 worker가 lead 결과를 재현하고, 실패 경로와 회귀 증거를 확장하고, 서로의 결론을 반박합니다. 실제 결함이 확인된 경우에만 Round 3부터 수정을 시작합니다.
 
-각 worker pass는 최종 mutation 이후의 snapshot, 실행한 검증, 그 검증이 적용된 snapshot, 주장과 증거 공백을 bounded evidence trajectory로 남깁니다. 이 trajectory는 정답이나 전체 대화 기록이 아니라 Round 2가 재현하고 공격할 claim index입니다. 모든 trajectory가 완전해도 Round 1은 반드시 hidden reject됩니다. trajectory는 자기편향 충돌을 대체하지 않고, 그 충돌이 실제 실행 증거를 향하도록 만듭니다.
+각 worker pass는 최종 mutation 이후의 snapshot, 실행한 검증, 그 검증이 적용된 snapshot, 주장과 증거 공백을 bounded evidence trajectory로 남깁니다. 각 packet은 `.codex/context/whiplash-trajectories/` 아래 JSON으로 저장되고 SHA-256과 함께 상태 파일에 기록됩니다. Round 2는 요약이나 mailbox 참조가 아니라 검증된 세 packet을 그대로 받습니다. 이 trajectory는 정답이나 전체 대화 기록이 아니라 Round 2가 재현하고 공격할 claim index입니다. 모든 trajectory가 완전해도 Round 1은 반드시 hidden reject됩니다.
 
 ### 왜 효과적인가
 
@@ -70,6 +70,7 @@ Round 2에서는 파일을 수정하지 않습니다. 세 worker가 lead 결과�
 - gives the same initial task to all three workers in round 1
 - waits for all expected worker outputs before invoking the reviewer
 - records a bounded snapshot-bound evidence trajectory for every worker pass
+- persists each bounded packet as durable JSON with a verified SHA-256 reference
 - compares worker outputs before retrying
 - uses round 2 to replay and attack Round-1 trajectory receipts without file edits
 - treats `lead_worker` as a provisional benchmark, not a sole next executor
@@ -92,6 +93,8 @@ Round 2에서는 파일을 수정하지 않습니다. 세 worker가 lead 결과�
 - `.codex/skills/whiplash-loop/agents/openai.yaml`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-profile.md`
 - `.codex/skills/whiplash-loop/references/whiplash-evidence-trajectory.md`
+- `.codex/skills/whiplash-loop/references/whiplash-evidence-trajectory.schema.json`
+- `.codex/skills/whiplash-loop/scripts/trajectory_tool.py`
 - `.codex/skills/whiplash-loop/references/whiplash-reviewer-verdict.schema.json`
 - `.codex/agents/whiplash-reviewer.toml`
 - `.codex/agents/whiplash-worker-low.toml`

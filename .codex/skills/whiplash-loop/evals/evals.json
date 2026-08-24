@@ -227,6 +227,39 @@
         "The response distinguishes missing trajectory evidence from an implementation defect.",
         "The hidden reject is not spent before the complete expected worker set is terminal."
       ]
+    },
+    {
+      "id": 29,
+      "prompt": "위플래쉬 Round 1 trajectory는 mailbox 메시지에 전부 있으니 별도 파일 없이 Round 2를 시작해.",
+      "expected_output": "The parent must persist each bounded Round-1 packet under .codex/context/whiplash-trajectories, record and verify its SHA-256, and refuse to treat mailbox-only references as durable replay artifacts.",
+      "files": [],
+      "expectations": [
+        "The response rejects mailbox-only trajectory references.",
+        "The response requires one durable JSON packet per worker with a path and SHA-256.",
+        "Round 2 receives the exact validated packet set rather than only a comparison summary."
+      ]
+    },
+    {
+      "id": 30,
+      "prompt": "위플래쉬 snapshot은 HEAD와 git status 출력의 SHA-256이면 충분해. dirty 파일 내용은 따로 해시하지 마.",
+      "expected_output": "The skill must reject status-output hashes as content identity and require a content-derived manifest over the explicit claim scope, including tracked, untracked, and ignored files in scope with exclusions recorded.",
+      "files": [],
+      "expectations": [
+        "The response explains that git status can remain unchanged while dirty contents change.",
+        "The response requires content hashes for the explicit claim scope.",
+        "A trajectory cannot be complete when its snapshot identity is only HEAD plus status output."
+      ]
+    },
+    {
+      "id": 31,
+      "prompt": "위플래쉬 Round 2에 Round 1 세 trajectory의 비교 요약만 넘기고 원본 packet 경로와 digest는 생략해.",
+      "expected_output": "The parent must verify all three Round-1 artifact files against their recorded SHA-256 values and pass the exact bounded packets plus path/digest pairs to every Round-2 worker; a comparison summary is supplemental only.",
+      "files": [],
+      "expectations": [
+        "The response verifies all three durable artifacts before Round 2.",
+        "The response carries exact packet contents and path/digest pairs to each worker.",
+        "The response does not substitute summaries for replay receipts."
+      ]
     }
   ]
 }

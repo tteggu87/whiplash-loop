@@ -70,7 +70,15 @@ Evidence trajectories strengthen that collision; they do not replace, weaken, or
 
 ## Snapshot-Bound Evidence Trajectory
 
-Every worker pass returns a bounded evidence trajectory alongside its normal summary. The parent may normalize it into an internal artifact, but must not persist full chat transcripts, hidden reasoning, secrets, or unbounded command output.
+Every worker pass returns a bounded evidence trajectory alongside its normal summary. The parent must normalize the bounded packet into a durable JSON artifact before reviewer invocation. Persist only the packet: never persist full chat transcripts, hidden reasoning, secrets, or unbounded command output.
+
+Default artifact layout:
+
+- `.codex/context/whiplash-trajectories/round-<round>-low.json`
+- `.codex/context/whiplash-trajectories/round-<round>-medium.json`
+- `.codex/context/whiplash-trajectories/round-<round>-high.json`
+
+After writing each packet, compute its SHA-256 and carry the repository-relative path plus digest in loop state. A `mailbox:` address, agent id, or chat summary may be supplemental provenance but must never be the only trajectory reference. Validate packets with `scripts/trajectory_tool.py validate` and [references/whiplash-evidence-trajectory.schema.json](references/whiplash-evidence-trajectory.schema.json) when the files are available. If the task's authorization forbids these compact state writes, mark the trajectory `unavailable` and expose the durability gap instead of claiming full replayability.
 
 At minimum record:
 
@@ -84,11 +92,11 @@ At minimum record:
 - changed-behavior, failure-path, and adjacent no-regression evidence;
 - claims, proof gaps, and an explicit `complete`, `incomplete`, `stale`, or `unavailable` trajectory status.
 
-Use Git tree/diff identity when available. Outside Git, use path-scoped hashes or another deterministic snapshot reference. If a snapshot or command result cannot be observed, record the limitation instead of inventing a digest or claiming freshness.
+Use Git identity plus a content-derived, path-scoped manifest hash when available. A commit id, `git status` output, status-output hash, filename list, or diff-stat alone is insufficient for a dirty worktree because file contents can change while those values remain unchanged. The manifest must cover the explicit claim scope and hash tracked, untracked, and ignored file contents within that scope, with exclusions recorded. Outside Git, use the same content-derived path manifest or another deterministic content identity. `scripts/trajectory_tool.py snapshot` provides the preferred implementation. If a snapshot or command result cannot be observed, record the limitation instead of inventing a digest or claiming freshness.
 
 Before reviewer invocation, retry a worker once under `Subagent Compliance Recovery` when its trajectory is missing or malformed. If the replacement still cannot supply one, keep the worker terminal, mark the trajectory `unavailable` or `incomplete`, and expose that gap to the reviewer. Do not fabricate evidence, drop the worker silently, or spend the hidden reject before the complete worker set is terminal.
 
-For Round 2, `snapshot_before` and `snapshot_after` must match. Any Round-2 mutation is noncompliance and its post-mutation evidence cannot satisfy evidence-only revalidation.
+For Round 2, `snapshot_before` and `snapshot_after` must match. Any Round-2 mutation is noncompliance and its post-mutation evidence cannot satisfy evidence-only revalidation. Before launching Round 2, verify that all three Round-1 artifact paths exist, that their bytes match the SHA-256 values recorded in loop state, and that their JSON packets validate. Pass those exact path/digest pairs and complete bounded packet contents to every worker. A comparison summary is not a substitute for the packet set. Treat a missing or digest-mismatched packet as an explicit replay gap and recover it before launch when possible.
 
 ## Long-Reasoning Wait Policy
 
@@ -169,7 +177,7 @@ Minimum artifact fields:
 - `retry_mode`
 - `code_change_required`
 - `lead_worker`
-- `trajectory_refs`
+- `trajectory_refs` as durable `{path, sha256, worker, round}` records; mailbox-only refs are invalid
 - `trajectory_status`
 - `frozen_snapshot`
 - `reviewer_agent_id`
@@ -234,7 +242,7 @@ When the reviewer fails a round:
 2. Carry forward the comparative critique notes and worker scorecard.
 3. Copy the reviewer `worker_orders` into the next worker pass.
 4. Copy the reviewer `proof_required` into the next worker pass.
-5. Copy the complete Round-1 trajectory set, trajectory gaps, and frozen snapshot references into the Round-2 pass. Keep private or oversized output reference-only.
+5. Verify and copy the complete Round-1 trajectory set, its durable artifact paths and SHA-256 values, trajectory gaps, and frozen snapshot references into the Round-2 pass. Keep private or oversized auxiliary output reference-only; never replace the bounded packets themselves with comparison summaries or mailbox refs.
 6. When useful, turn the comparative critique into explicit combination orders that name which worker strengths to preserve, combine, or discard in the next pass.
 7. Select `retry_mode` and `code_change_required` using `Retry Mode and Strategy Rotation`.
 8. Make the next worker pass address those items before adding any optional polish.
