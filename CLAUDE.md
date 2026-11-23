@@ -1,6 +1,6 @@
 # Claude Code Guide
 
-This repository packages `whiplash-loop`, a Codex skill for Fletcher-style proof-first retry orchestration.
+This repository packages the Whiplash v2 retry loop for Codex and Claude Code.
 
 ## Repository Purpose
 
@@ -13,7 +13,8 @@ This repository packages `whiplash-loop`, a Codex skill for Fletcher-style proof
 The repository has two layers:
 
 1. Skill layer
-- `.codex/skills/whiplash-loop/SKILL.md`
+- `.claude/skills/whiplash-loop/SKILL.md` for Claude Code
+- `.codex/skills/whiplash-loop/SKILL.md` for the shared loop contract and Codex entry point
 - `.codex/skills/whiplash-loop/agents/openai.yaml`
 - `.codex/skills/whiplash-loop/references/*`
 - `.codex/skills/whiplash-loop/evals/evals.json`
@@ -33,8 +34,7 @@ The current repo is not the old single-worker loop. The active contract is:
 - separated reviewer required for full v2
 - default 3-worker swarm
 - round 1 gives the same task to all workers
-- hidden round-1 reject owned by the reviewer/orchestrator
-- bounded snapshot-bound evidence trajectories strengthen Round 2 without weakening the hidden reject
+- bounded snapshot-bound evidence trajectories support Round 2 replay
 - comparative critique before role split
 - fail rounds surface verbatim `Orders to worker`
 - evidence-only adversarial revalidation in round 2
@@ -59,7 +59,6 @@ When changing loop behavior, keep these files aligned:
 
 - do not silently weaken mandatory reviewer separation or the default 3-worker swarm
 - do not silently shrink eval coverage when adding features
-- do not let trajectory completeness create a round-1 pass path or turn the hidden reject into a conditional gate
 - do not let schema, reviewer prompt, and skill text drift apart
 - do not interpret `retry_worker` as permission to edit; use `retry_mode` and `code_change_required`
 - do not replace non-git verification rules with git-only assumptions
@@ -77,4 +76,4 @@ Before considering a change complete:
 
 ## For Claude Code Users
 
-This repo is still a Codex skill repo, but these notes exist so Claude Code users can navigate and edit it without guessing the loop contract from scattered files.
+Run `/whiplash-loop <task>` in Claude Code from this checkout. To use it on another project, start Claude Code in that project with `claude --add-dir /path/to/whiplash-loop`. Keep the whole Whiplash checkout available because the [Claude skill](.claude/skills/whiplash-loop/SKILL.md) reads the shared loop and evidence contracts from it.

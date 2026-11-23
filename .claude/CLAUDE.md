@@ -5,7 +5,7 @@ Use this file as the quick editing reference for Claude Code sessions working in
 ## What Matters Most
 
 - `whiplash-loop` is a skill repo, not a general app repo
-- the main source of truth is the current Whiplash v2 contract in `.codex/skills/whiplash-loop/SKILL.md`
+- the parent runs `/whiplash-loop` through `.claude/skills/whiplash-loop/SKILL.md`, which loads the shared loop and evidence contracts
 - the reviewer prompt, schemas, and evals must move together
 
 ## Files That Must Stay In Sync
@@ -29,11 +29,11 @@ Use this file as the quick editing reference for Claude Code sessions working in
 - Claude worker mapping is `low -> haiku`, `medium -> sonnet`, `high -> opus`
 - Claude reviewer mapping defaults to `opus`
 - round 1 uses the same task for all workers
-- hidden reject belongs to the Fletcher reviewer, not the workers
-- every pass returns a bounded snapshot-bound evidence trajectory; it strengthens Round 2 but never creates a Round-1 pass path
+- the parent saves each pass's bounded evidence as JSON and records the SHA-256 before review
 - comparative critique happens before specialization
 - after the first comparative review, the reviewer may explicitly direct the next pass to preserve or combine worker strengths
-- round 2 receives the Round-1 trajectory set, replays and attacks its receipts, and must not edit files
+- before round 2, the parent checks the saved round-1 files against their recorded hashes
+- in round 2, workers replay the verified evidence and must not edit files
 - repair begins in round 3 only after round 2 confirms a concrete defect
 - fail rounds surface verbatim `Orders to worker`
 

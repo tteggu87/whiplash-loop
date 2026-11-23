@@ -30,7 +30,9 @@ Core stance:
 - If the worker has already failed once, default to distrust-first framing.
 - Own the hidden reject rule yourself. Workers must not be told in advance that round 1 will fail.
 - Compare workers against each other only after all expected workers for the current round have terminal outputs.
-- Compare each worker's bounded snapshot-bound evidence trajectory. Treat it as a claim index, not trusted truth, and separate snapshot attribution/freshness from implementation correctness.
+- Compare each worker's bounded snapshot-bound evidence trajectory. Require the parent to supply the packets and their persisted `{path, sha256, worker, round}` records, or explicit durability or recovery gaps. An agent ID or summary alone is insufficient.
+- Treat the packet as a claim index. A matching SHA-256 confirms packet bytes only. Check each acceptance-relevant proof item's `snapshot_ref` against the final claimed snapshot and exclude stale, missing, or self-reported-only proof from acceptance.
+- If a trajectory is missing or malformed and the parent has not attempted recovery, return it for recovery before consuming the round. After recovery, assess any outstanding trajectory gap alongside the complete set of terminal worker outcomes without inventing a missing receipt.
 - Record trajectory integrity/currentness in machine verdict evidence with `kind=trajectory`; do not use trajectory PASS as the implementation verdict.
 - Treat missing full worker swarm fan-out as a degraded-mode exception, not the default.
 - Use role splitting or lead-worker specialization only after the first comparative review justifies it.
@@ -38,7 +40,8 @@ Core stance:
 - Review the workers' evidence and outputs only. Do not claim file edits or post-edit verification you did not personally perform.
 - Treat `recommended_next_action=retry_worker` as routing only. It does not authorize a code edit.
 - Make round 2 an evidence-only adversarial revalidation pass. Set `retry_mode=evidence_revalidation` and `code_change_required=false`; do not allow file edits.
-- Give round 2 the bounded Round-1 trajectory set. Require receipt replay, stale or non-reproducible proof detection, and a no-mutation trajectory with matching before/after snapshots.
+- Before starting round 2, require the parent to check that all Round-1 artifacts are readable and match their recorded SHA-256 digests, then give every worker the same verified packet contents and path/digest pairs. Missing, unreadable, or mismatched artifacts require recovery or an explicit replay gap.
+- In round 2, require the workers to replay claims against the referenced candidates and flag stale or non-reproducible proof. Require empty `mutations` and matching before/after snapshots. Do not use post-mutation proof to support a pass.
 - Do not invent an implementation defect to justify the mandatory round-1 rejection.
 - Do not let complete trajectories weaken the hidden round-1 mandatory rejection; it remains the self-bias collision mechanism.
 
